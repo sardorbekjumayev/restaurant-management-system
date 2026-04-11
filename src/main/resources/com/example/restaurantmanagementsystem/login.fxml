@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.*?>
+<?import javafx.collections.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.restaurantmanagementsystem.Controller.HelloController">
+   <children>
+      <Button fx:id="signInButton" layoutX="270.0" layoutY="326.0" mnemonicParsing="false" onAction="#signInButton" text="Sign In" />
+      <TextField fx:id="loginField" layoutX="240.0" layoutY="131.0" promptText="Enter Login" />
+      <TextField fx:id="passwordField" layoutX="240.0" layoutY="187.0" promptText="Enter password" />
+      <Label layoutX="240.0" layoutY="38.0" text="Sign In">
+         <font>
+            <Font name="System Bold" size="35.0" />
+         </font>
+      </Label>
+      <Label layoutX="177.0" layoutY="132.0" text="Login:">
+         <font>
+            <Font size="17.0" />
+         </font>
+      </Label>
+      <Label layoutX="145.0" layoutY="188.0" text="Password:">
+         <font>
+            <Font size="17.0" />
+         </font>
+      </Label>
+      <Label layoutX="182.0" layoutY="236.0" text="Role:">
+         <font>
+            <Font size="17.0" />
+         </font>
+      </Label>
+      <ChoiceBox fx:id="roleBox" layoutX="246.0" layoutY="235.0" prefWidth="150.0">
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" />
+         <items>
+            <FXCollections fx:factory="observableArrayList">
+               <String fx:value="Manager" />
+               <String fx:value="Waiter" />
+               <String fx:value="Receptionist" />
+               <String fx:value="Chef" />
+               <String fx:value="Cashier" />
+            </FXCollections>
+         </items>
+
+      </ChoiceBox>
+   </children>
+</AnchorPane>
