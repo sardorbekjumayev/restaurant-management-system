@@ -1,5 +1,6 @@
 package com.example.restaurantmanagementsystem.Controller;
 
+import com.example.restaurantmanagementsystem.Model.User;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -24,7 +25,10 @@ public class HelloController {
     protected void signInButton(ActionEvent event) throws IOException {
 
         String roleofuser = roleBox.getValue().toString();
-        System.out.println(roleofuser);
+        String loginoguser = loginField.getText();
+        String passwordofuser = password.getText();
+
+        User user = new User(loginoguser, passwordofuser, roleofuser);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ManagerDashboard.fxml"));
         Parent root = loader.load();
@@ -33,7 +37,7 @@ public class HelloController {
         ManagerController managerController = loader.getController();
 
         // 4️⃣ User ma’lumotini yuborish
-//        ManagerController.setUser(user);
+        managerController.setUser(user);
 
         // 5️⃣ Sahifani almashtirish
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
