@@ -30,6 +30,7 @@ public class HelloController {
 
         User user = new User(loginoguser, passwordofuser, roleofuser);
 
+
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/ManagerDashboard.fxml"));
         Parent root = loader.load();
 

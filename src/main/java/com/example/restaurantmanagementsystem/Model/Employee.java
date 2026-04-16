@@ -1,12 +1,29 @@
 package com.example.restaurantmanagementsystem.Model;
 
 public class Employee extends Person{
-    Employee(String name, String email, String phone) {
+
+    private int employeeID;
+    private String dateJoined;
+
+    Employee(String name, String email, String phone,int employeeID, String dateJoined) {
         super(name, email, phone);
+
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
+        this.employeeID = employeeID;
+        this.dateJoined = dateJoined;
+
     }
 
-    public String getEmail(){
-        return getEmail();
+
+    public int getEmployeeID() {
+        return employeeID;
     }
+
+    public String getDateJoined() {
+        return dateJoined;
+    }
+
 
 }
