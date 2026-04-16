@@ -11,7 +11,7 @@ public class ManagerController {
 
     // Bu metod LoginController dan User kelganda ishlaydi
     public void setUser(User user){
-        welcomeLabel.setText("Xush kelibsiz, " + user.getUsername());
+        welcomeLabel.setText("Xush kelibsiz, "+ user.getUsername());
     }
 
 }

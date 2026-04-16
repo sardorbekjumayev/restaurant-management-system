@@ -17,7 +17,7 @@ public class HelloController {
     @FXML
     private TextField loginField;
     @FXML
-    private TextField password;
+    private TextField passwordField;
     @FXML
     private ChoiceBox roleBox;
 
@@ -26,11 +26,11 @@ public class HelloController {
 
         String roleofuser = roleBox.getValue().toString();
         String loginoguser = loginField.getText();
-        String passwordofuser = password.getText();
+        String passwordofuser = passwordField.getText();
 
         User user = new User(loginoguser, passwordofuser, roleofuser);
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("ManagerDashboard.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/ManagerDashboard.fxml"));
         Parent root = loader.load();
 
         // 3️⃣ DashboardController-ni olish
