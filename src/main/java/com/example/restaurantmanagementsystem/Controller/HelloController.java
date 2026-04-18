@@ -1,6 +1,7 @@
 package com.example.restaurantmanagementsystem.Controller;
 
 import com.example.restaurantmanagementsystem.Model.User;
+import com.example.restaurantmanagementsystem.db.CheckRole;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -29,21 +30,35 @@ public class HelloController {
         String passwordofuser = passwordField.getText();
 
         User user = new User(loginoguser, passwordofuser, roleofuser);
+        CheckRole checkRole = new CheckRole();
 
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/ManagerDashboard.fxml"));
-        Parent root = loader.load();
+        //db ga yuborib role ni tekshiradi
+        checkRole.userRole(loginoguser, passwordofuser, roleofuser);
+        String role = checkRole.getRolee();
 
-        // 3️⃣ DashboardController-ni olish
-        ManagerController managerController = loader.getController();
 
-        // 4️⃣ User ma’lumotini yuborish
-        managerController.setUser(user);
 
-        // 5️⃣ Sahifani almashtirish
-        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-        stage.setScene(new Scene(root, 600, 400));
-        stage.show();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/" + role + "Dashboard.fxml"));
+            Parent root = loader.load();
+
+
+            // 3️⃣ DashboardController-ni olish
+            ManagerController managerController = loader.getController();
+
+            // 4️⃣ User ma’lumotini yuborish
+            managerController.setUser(user);
+
+            // 5️⃣ Sahifani almashtirish
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root, 600, 400));
+            stage.setTitle(role + " Dashboard");
+            stage.show();
+
+
+
+
+
 
     }
 }
