@@ -5,6 +5,9 @@ public class Employee extends Person{
     private int employeeID;
     private String dateJoined;
 
+    private Account account;
+
+
     Employee(String name, String email, String phone,int employeeID, String dateJoined) {
         super(name, email, phone);
 
