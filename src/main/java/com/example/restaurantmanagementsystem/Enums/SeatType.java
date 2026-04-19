@@ -4,6 +4,6 @@ public enum SeatType {
     REGULAR,
     KID,
     ACCESIBLE,
-    Other
+    OTHER
 
 }
