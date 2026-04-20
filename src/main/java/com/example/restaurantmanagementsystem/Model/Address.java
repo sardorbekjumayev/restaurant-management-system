@@ -1,4 +1,4 @@
 package com.example.restaurantmanagementsystem.Model;
 
-public class Customer {
+public class Address {
 }

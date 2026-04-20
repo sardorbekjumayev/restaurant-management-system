@@ -2,13 +2,13 @@ package com.example.restaurantmanagementsystem.Model;
 
 public class Person {
 
-    public String username;
-    public String useremail;
-    public String userphone;
+    public String name;
+    public String email;
+    public String phone;
 
     Person(String name, String email, String phone){
-        this.username = name;
-        this.useremail = email;
-        this.userphone = phone;
+        this.name = name;
+        this.email = email;
+        this.phone = phone;
     }
 }
