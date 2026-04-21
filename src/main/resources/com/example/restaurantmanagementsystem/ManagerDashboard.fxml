@@ -22,6 +22,6 @@
       <Button layoutX="231.0" layoutY="169.0" mnemonicParsing="false" prefHeight="62.0" prefWidth="118.0" text="Add Menu" />
       <Button layoutX="231.0" layoutY="264.0" mnemonicParsing="false" prefHeight="62.0" prefWidth="118.0" text="Add Menu" />
       <Button layoutX="426.0" layoutY="169.0" mnemonicParsing="false" prefHeight="62.0" prefWidth="118.0" text="Add Menu" />
-      <Button fx:id="logOutButton" layoutX="479.0" layoutY="342.0" mnemonicParsing="false" prefHeight="35.0" prefWidth="95.0" text="Log out" />
+      <Button fx:id="logOutButton" layoutX="479.0" layoutY="342.0" mnemonicParsing="false" onAction="#logOut" prefHeight="35.0" prefWidth="95.0" text="Log out" />
    </children>
 </AnchorPane>
