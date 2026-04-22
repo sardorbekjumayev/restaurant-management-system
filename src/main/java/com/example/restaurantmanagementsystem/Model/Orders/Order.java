@@ -1,4 +1,4 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Orders;
 
 import com.example.restaurantmanagementsystem.Enums.OrderStatus;
 

@@ -1,6 +1,4 @@
-package org;
-
-import org.Payment;
+package com.example.restaurantmanagementsystem.Model.Payments;
 
 public class CreditCardTransaction extends Payment {
 

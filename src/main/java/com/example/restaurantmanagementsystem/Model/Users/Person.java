@@ -1,4 +1,4 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Users;
 
 public class Person {
 

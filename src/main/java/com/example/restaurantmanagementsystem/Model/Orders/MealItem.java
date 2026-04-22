@@ -1,4 +1,6 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Orders;
+
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
 
 public class MealItem {
     public int mealItemID;

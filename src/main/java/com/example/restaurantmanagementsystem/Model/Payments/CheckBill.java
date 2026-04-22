@@ -1,4 +1,4 @@
-package org;
+package com.example.restaurantmanagementsystem.Model.Payments;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package org;
+package com.example.restaurantmanagementsystem.Model.Payments;
 
 public class CheckTransaction extends Payment {
 

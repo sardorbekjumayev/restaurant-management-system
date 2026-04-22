@@ -1,4 +1,4 @@
-package org;
+package com.example.restaurantmanagementsystem.Enums;
 
 public enum PaymentStatus {
     PENDING,

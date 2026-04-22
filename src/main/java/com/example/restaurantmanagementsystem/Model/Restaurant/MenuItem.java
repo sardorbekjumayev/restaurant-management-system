@@ -1,4 +1,4 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Restaurant;
 public class MenuItem {
     private int menuItemID;
     private String title;
