@@ -1,5 +1,7 @@
 package com.example.restaurantmanagementsystem.Model.Payments;
 
+import com.example.restaurantmanagementsystem.Enums.PaymentStatus;
+
 import java.time.LocalDateTime;
 
 public abstract class Payment {

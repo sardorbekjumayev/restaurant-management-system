@@ -1,5 +1,7 @@
 package com.example.restaurantmanagementsystem.Model.Payments;
 
+import com.example.restaurantmanagementsystem.Enums.PaymentStatus;
+
 public class CheckTransaction extends Payment {
 
     private String checkNumber;
