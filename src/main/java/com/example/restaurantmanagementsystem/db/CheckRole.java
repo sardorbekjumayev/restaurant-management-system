@@ -20,4 +20,13 @@ public class CheckRole {
     public String getRolee() {
         return rolee;
     }
+
+
+
+    //this function is for test
+    public String getUserName(){
+
+        return "Manager";
+
+    }
 }
