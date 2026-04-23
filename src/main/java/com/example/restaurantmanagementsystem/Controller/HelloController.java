@@ -36,9 +36,6 @@ public class HelloController {
         //db ga yuborib role ni tekshiradi
         checkRole.userRole(loginoguser, passwordofuser, roleofuser);
         String role = checkRole.getRolee();
-
-
-
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/" + role + "Dashboard.fxml"));
             Parent root = loader.load();
 
