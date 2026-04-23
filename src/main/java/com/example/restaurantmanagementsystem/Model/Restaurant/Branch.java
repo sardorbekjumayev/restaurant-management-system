@@ -1,4 +1,7 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Restaurant;
+
+import com.example.restaurantmanagementsystem.Model.Users.Address;
+import com.example.restaurantmanagementsystem.Model.Tables.TableChart;
 
 public class Branch {
     private String name;

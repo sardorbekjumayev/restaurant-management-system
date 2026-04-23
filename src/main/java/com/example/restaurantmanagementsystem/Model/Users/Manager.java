@@ -1,4 +1,4 @@
-package com.example.restaurantmanagementsystem.Model;
+package com.example.restaurantmanagementsystem.Model.Users;
 
 public class Manager extends Employee{
     Manager(String name, String email, String phone, int employeeID, String dateJoined) {
