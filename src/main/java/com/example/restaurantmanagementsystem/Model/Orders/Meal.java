@@ -6,17 +6,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Meal {
-    public int mealID;
-    public TableSeat tableSeat;
-    public List<MealItem> mealItems;
+    private int mealID;
+    private TableSeat tableSeat;
+    private final List<MealItem> mealItems = new ArrayList<>();
 
     public Meal(int mealID, TableSeat tableSeat) {
         this.mealID = mealID;
         this.tableSeat = tableSeat;
-        this.mealItems = new ArrayList<>();
     }
 
     public boolean addMealItem(MealItem mealItem) {
-        return this.mealItems.add(mealItem);
+        return mealItems.add(mealItem);
+    }
+
+    public int getMealID() {
+        return mealID;
+    }
+
+    public TableSeat getTableSeat() {
+        return tableSeat;
+    }
+
+    public List<MealItem> getMealItems() {
+        return mealItems;
     }
 }

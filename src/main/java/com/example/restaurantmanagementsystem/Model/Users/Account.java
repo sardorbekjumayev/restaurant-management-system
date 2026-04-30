@@ -1,19 +1,40 @@
 package com.example.restaurantmanagementsystem.Model.Users;
 
 public class Account {
-
     private int id;
+    private String username;
     private String password;
-    private String Address;
-    private String Status;
+    private AccountStatus status;
+    private String role;
 
-    Account(int id, String password, String Address, String Status){
-
-        this.id = id;
-        this.password = password;
-        this.Address = Address;
-        this.Status = Status;
-
+    public Account() {
     }
 
+    public Account(int id, String username, String password, AccountStatus status, String role) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.status = status;
+        this.role = role;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public AccountStatus getStatus() {
+        return status;
+    }
+
+    public String getRole() {
+        return role;
+    }
 }

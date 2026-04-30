@@ -4,24 +4,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Restaurant {
+    private int id;
     private String name;
-    private List<Branch> branches;
+    private final List<Branch> branches = new ArrayList<>();
 
     public Restaurant(String name) {
+        this(0, name);
+    }
+
+    public Restaurant(int id, String name) {
+        this.id = id;
         this.name = name;
-        this.branches = new ArrayList<>();
     }
 
     public boolean addBranch(Branch branch) {
         return branches.add(branch);
     }
 
-    public String getName() {
-        return name;
+    public int getId() {
+        return id;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getName() {
+        return name;
     }
 
     public List<Branch> getBranches() {

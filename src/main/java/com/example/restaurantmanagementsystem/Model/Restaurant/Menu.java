@@ -5,15 +5,20 @@ import java.util.List;
 
 public class Menu {
     private int menuID;
+    private int branchId;
     private String title;
     private String description;
-    private List<MenuSection> menuSections;
+    private final List<MenuSection> menuSections = new ArrayList<>();
 
     public Menu(int menuID, String title, String description) {
+        this(menuID, 0, title, description);
+    }
+
+    public Menu(int menuID, int branchId, String title, String description) {
         this.menuID = menuID;
+        this.branchId = branchId;
         this.title = title;
         this.description = description;
-        this.menuSections = new ArrayList<>();
     }
 
     public boolean addMenuSection(MenuSection menuSection) {
@@ -28,20 +33,20 @@ public class Menu {
         this.menuID = menuID;
     }
 
+    public int getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(int branchId) {
+        this.branchId = branchId;
+    }
+
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public List<MenuSection> getMenuSections() {

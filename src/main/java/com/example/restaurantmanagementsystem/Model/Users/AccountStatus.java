@@ -1,4 +1,7 @@
 package com.example.restaurantmanagementsystem.Model.Users;
 
-public class AccountStatus {
+public enum AccountStatus {
+    ACTIVE,
+    INACTIVE,
+    BLOCKED
 }
