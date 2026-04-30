@@ -1,56 +1,106 @@
 package com.example.restaurantmanagementsystem.Model.Users;
 
 import com.example.restaurantmanagementsystem.Enums.ReservationStatus;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
 
 public class Reservation {
-
     private int reservationId;
     private LocalDateTime timeOfReservation;
     private int peopleCount;
     private ReservationStatus status;
     private String notes;
-    private LocalDate checkInTime;
+    private LocalDateTime checkInTime;
     private Customer customer;
+    private Integer tableId;
+    private Integer branchId;
 
-    ///Only receptionist can create object thru this:
-    Reservation(LocalDateTime timeOfReservation, int peopleCount, String notes, Customer customer) {
+    public Reservation(int reservationId, LocalDateTime timeOfReservation, int peopleCount,
+                       String notes, Customer customer, Integer tableId) {
+        this(reservationId, timeOfReservation, peopleCount, notes, customer, tableId, customer == null ? null : customer.getBranchId());
+    }
+
+    public Reservation(int reservationId, LocalDateTime timeOfReservation, int peopleCount,
+                       String notes, Customer customer, Integer tableId, Integer branchId) {
+        this.reservationId = reservationId;
         this.timeOfReservation = timeOfReservation;
         this.peopleCount = peopleCount;
         this.notes = notes;
         this.customer = customer;
+        this.tableId = tableId;
+        this.branchId = branchId;
         this.status = ReservationStatus.requested;
     }
 
-    public boolean updatePeopleCount(int num) {
-        try {
-            peopleCount = peopleCount + num;
-            return true;
-        } catch (Exception e) {
-            System.out.println("Please enter a valid number");
-            return false;
-        }
+    public int getReservationId() {
+        return reservationId;
     }
 
-    public int getReservationId() { return reservationId; }
-    public void setReservationId(int reservationId) { this.reservationId = reservationId; }
+    public void setReservationId(int reservationId) {
+        this.reservationId = reservationId;
+    }
 
-    public LocalDateTime getTimeOfReservation() { return timeOfReservation; }
-    public void setTimeOfReservation(LocalDateTime timeOfReservation) { this.timeOfReservation = timeOfReservation; }
+    public LocalDateTime getTimeOfReservation() {
+        return timeOfReservation;
+    }
 
-    public int getPeopleCount() { return peopleCount; }
-    public void setPeopleCount(int peopleCount) { this.peopleCount = peopleCount; }
+    public void setTimeOfReservation(LocalDateTime timeOfReservation) {
+        this.timeOfReservation = timeOfReservation;
+    }
 
-    public ReservationStatus getStatus() { return status; }
-    public void setStatus(ReservationStatus status) { this.status = status; }
+    public int getPeopleCount() {
+        return peopleCount;
+    }
 
-    public String getNotes() { return notes; }
-    public void setNotes(String notes) { this.notes = notes; }
+    public void setPeopleCount(int peopleCount) {
+        this.peopleCount = peopleCount;
+    }
 
-    public LocalDate getCheckInTime() { return checkInTime; }
-    public void setCheckInTime(LocalDate checkInTime) { this.checkInTime = checkInTime; }
+    public ReservationStatus getStatus() {
+        return status;
+    }
 
-    public Customer getCustomer() { return customer; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public LocalDateTime getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+
+    public Integer getTableId() {
+        return tableId;
+    }
+
+    public void setTableId(Integer tableId) {
+        this.tableId = tableId;
+    }
+
+    public Integer getBranchId() {
+        return branchId;
+    }
+
+    public void setBranchId(Integer branchId) {
+        this.branchId = branchId;
+    }
 }
