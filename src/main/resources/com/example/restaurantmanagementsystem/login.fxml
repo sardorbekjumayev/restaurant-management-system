@@ -41,7 +41,6 @@
             </ChoiceBox>
             <Button mnemonicParsing="false" onAction="#signInButton" prefHeight="42.0" prefWidth="296.0" style="-fx-background-color: #0f766e; -fx-text-fill: white; -fx-background-radius: 10;" text="Sign In" />
             <Label fx:id="loginMessageLabel" style="-fx-text-fill: #dc2626;" wrapText="true" />
-            <Label text="Demo accounts: admin/admin123, manager/pass, waiter/123, chef/chef123, reception/recep123" style="-fx-text-fill: #78716c;" wrapText="true" />
          </children>
       </VBox>
    </children>
