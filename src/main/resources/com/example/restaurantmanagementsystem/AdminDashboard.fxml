@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="860.0" prefWidth="1320.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.restaurantmanagementsystem.Controller.AdminDashboardController">
+   <top>
+      <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="18.0" style="-fx-background-color: #0f766e;" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets bottom="12.0" left="18.0" right="18.0" top="12.0" />
+         </padding>
+         <children>
+            <Label fx:id="welcomeLabel" text="Dashboard">
+               <font>
+                  <Font size="22.0" />
+               </font>
+               <style>-fx-text-fill: white;</style>
+            </Label>
+            <HBox alignment="CENTER_RIGHT" prefWidth="820.0" />
+            <Button fx:id="logOutButton" mnemonicParsing="false" onAction="#logOut" style="-fx-background-color: white; -fx-text-fill: #0f766e; -fx-background-radius: 10;" text="Log out" />
+         </children>
+      </HBox>
+   </top>
+   <center>
+      <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+         <tabs>
+            <Tab fx:id="overviewTab" text="Overview">
+               <content>
+                  <VBox spacing="18.0" style="-fx-background-color: #f5f5f4;">
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                     <children>
+                        <Label text="Asosiy ko'rsatkichlar">
+                           <font>
+                              <Font size="24.0" />
+                           </font>
+                        </Label>
+                        <HBox spacing="16.0">
+                           <children>
+                              <VBox fx:id="employeeOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="employeeOverviewTitleLabel" text="Employees" />
+                                    <Label fx:id="employeeCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="customerOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="customerOverviewTitleLabel" text="Customers" />
+                                    <Label fx:id="customerCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="menuOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="menuOverviewTitleLabel" text="Menu Items" />
+                                    <Label fx:id="menuCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="reservationOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="reservationOverviewTitleLabel" text="Reservations" />
+                                    <Label fx:id="reservationCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="activeOrderOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="activeOrderOverviewTitleLabel" text="Active Orders" />
+                                    <Label fx:id="activeOrderCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                        <VBox spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                           <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                           <children>
+                              <Label text="Demo loginlar" />
+                              <Label text="manager / pass" />
+                              <Label text="waiter / 123" />
+                              <Label text="chef / chef123" />
+                              <Label text="reception / recep123" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </VBox>
+               </content>
+            </Tab>
+            <Tab fx:id="branchTab" text="Branches">
+               <content>
+                  <SplitPane dividerPositions="0.62">
+                     <items>
+                        <TableView fx:id="branchTable">
+                           <columns>
+                              <TableColumn fx:id="branchNameColumn" prefWidth="180.0" text="Branch" />
+                              <TableColumn fx:id="branchAddressColumn" prefWidth="280.0" text="Address" />
+                              <TableColumn fx:id="branchManagerColumn" prefWidth="180.0" text="Manager" />
+                           </columns>
+                        </TableView>
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                           <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
+                           <children>
+                              <Label text="Branch Form" />
+                              <GridPane hgap="10.0" vgap="10.0">
+                                 <children>
+                                    <Label text="Name" GridPane.rowIndex="0" />
+                                    <TextField fx:id="branchNameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Street" GridPane.rowIndex="1" />
+                                    <TextField fx:id="branchStreetField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="City" GridPane.rowIndex="2" />
+                                    <TextField fx:id="branchCityField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label text="District" GridPane.rowIndex="3" />
+                                    <TextField fx:id="branchDistrictField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label text="Country" GridPane.rowIndex="4" />
+                                    <TextField fx:id="branchCountryField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                    <Label text="Manager" GridPane.rowIndex="5" />
+                                    <ChoiceBox fx:id="branchManagerBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                 </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
+                              </GridPane>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#saveBranch" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Create Branch" />
+                                    <Button mnemonicParsing="false" onAction="#assignBranchManager" text="Assign Manager" />
+                                    <Button mnemonicParsing="false" onAction="#deleteBranch" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearBranchForm" text="New" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </content>
+            </Tab>
+            <Tab fx:id="employeeTab" text="Employees">
+               <content>
+                  <SplitPane dividerPositions="0.62">
+                     <items>
+                        <TableView fx:id="employeeTable">
+                           <columns>
+                              <TableColumn fx:id="employeeNameColumn" prefWidth="250.0" text="Name" />
+                              <TableColumn fx:id="employeeRoleColumn" prefWidth="120.0" text="Role" />
+                              <TableColumn fx:id="employeeUsernameColumn" prefWidth="150.0" text="Username" />
+                           </columns>
+                        </TableView>
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                           <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
+                           <children>
+                              <Label text="Employee Form" />
+                              <GridPane hgap="10.0" vgap="10.0">
+                                 <children>
+                                    <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                                    <TextField fx:id="employeeNameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Email" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                                    <TextField fx:id="employeeEmailField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="Phone" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                                    <TextField fx:id="employeePhoneField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label text="Username" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+                                    <TextField fx:id="employeeUsernameField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label text="Password" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+                                    <TextField fx:id="employeePasswordField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                    <Label text="Role" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+                                    <ChoiceBox fx:id="employeeRoleBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                    <Label fx:id="employeeBranchLabel" text="Branch" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+                                    <ChoiceBox fx:id="employeeBranchBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                    <Label text="Date Joined" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+                                    <TextField fx:id="employeeDateJoinedField" promptText="yyyy-MM-dd" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+                                 </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
+                              </GridPane>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#saveEmployee" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
+                                    <Button mnemonicParsing="false" onAction="#deleteEmployee" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearEmployeeForm" text="New" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+   </center>
+   <bottom>
+      <Label fx:id="statusLabel" prefHeight="36.0" style="-fx-background-color: #e7e5e4; -fx-padding: 0 16 0 16;" text="Tayyor" BorderPane.alignment="CENTER" />
+   </bottom>
+</BorderPane>
+
