@@ -1109,6 +1109,7 @@ public class ManagerController {
 
             Order order = new Order(
                     selected == null ? 0 : selected.getOrderID(),
+                    currentUser.getBranchId(),
                     customerId,
                     waiterId,
                     selectedTable.getTableId(),
