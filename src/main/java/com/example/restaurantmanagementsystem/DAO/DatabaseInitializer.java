@@ -239,6 +239,7 @@ public final class DatabaseInitializer {
         insertMenu(connection, 1, 1, "Main Menu", "Daily restaurant menu");
         insertMenuSection(connection, 1, 1, "Main Dishes", "Signature dishes");
         insertMenuSection(connection, 2, 1, "Drinks", "Fresh drinks");
+        insertMenuSection(connection, 3, 1, "Desserts", "Sweet desserts");
         insertMenuItem(connection, 1, 1, "Plov", "Traditional Uzbek plov", 45000, true);
         insertMenuItem(connection, 2, 1, "Steak", "Medium grilled steak", 95000, true);
         insertMenuItem(connection, 3, 2, "Lemonade", "Homemade lemonade", 18000, true);

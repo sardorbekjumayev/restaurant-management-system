@@ -10,6 +10,7 @@ import com.example.restaurantmanagementsystem.Model.Orders.MealItem;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Account;
@@ -45,7 +46,9 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -65,6 +68,7 @@ public class ManagerController {
     private User currentUser;
 
     private final ObservableList<OrderItemRow> orderItemRows = FXCollections.observableArrayList();
+    private final Map<Integer, MenuSection> menuSectionById = new HashMap<>();
 
     public static final class OrderItemRow {
         private final MenuItem menuItem;
@@ -189,7 +193,7 @@ public class ManagerController {
     @FXML
     private TableView<MenuItem> menuItemTable;
     @FXML
-    private TableColumn<MenuItem, Number> menuSectionIdColumn;
+    private TableColumn<MenuItem, String> menuSectionIdColumn;
     @FXML
     private TableColumn<MenuItem, String> menuTitleColumn;
     @FXML
@@ -200,6 +204,8 @@ public class ManagerController {
     private TextField menuTitleField;
     @FXML
     private TextArea menuDescriptionField;
+    @FXML
+    private ChoiceBox<MenuSection> menuSectionBox;
     @FXML
     private TextField menuPriceField;
     @FXML
@@ -355,7 +361,9 @@ public class ManagerController {
         customerEmailColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(safe(data.getValue().getEmail())));
         customerPhoneColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getPhone()));
 
-        menuSectionIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getSectionId()));
+        menuSectionIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(
+                resolveMenuSectionName(data.getValue().getSectionId())
+        ));
         menuTitleColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getTitle()));
         menuPriceColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getPrice()));
         menuAvailableColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().isAvailable()));
@@ -609,14 +617,24 @@ public class ManagerController {
             activeOrderCountLabel.setText(String.valueOf(stats.getActiveOrderCount()));
 
             List<MenuItem> menuItems = managementService.getMenuItems();
+            List<MenuSection> menuSections = managementService.getMenuSections();
             List<Table> tables = managementService.getTables();
             List<Customer> customers = managementService.getCustomers();
             List<Employee> employees = managementService.getEmployees();
             List<Order> orders = managementService.getOrders();
 
+            menuSectionById.clear();
+            for (MenuSection section : menuSections) {
+                menuSectionById.put(section.getMenuSectionID(), section);
+            }
+
             employeeTable.setItems(FXCollections.observableArrayList(employees));
             customerTable.setItems(FXCollections.observableArrayList(customers));
             menuItemTable.setItems(FXCollections.observableArrayList(menuItems));
+            menuSectionBox.setItems(FXCollections.observableArrayList(menuSections));
+            if (menuSectionBox.getValue() == null && !menuSections.isEmpty()) {
+                menuSectionBox.setValue(menuSections.getFirst());
+            }
             diningTableTable.setItems(FXCollections.observableArrayList(tables));
             reservationTable.setItems(FXCollections.observableArrayList(managementService.getReservations()));
             orderTable.setItems(FXCollections.observableArrayList(orders));
@@ -784,9 +802,10 @@ public class ManagerController {
     public void saveMenuItem() {
         try {
             MenuItem selected = menuItemTable.getSelectionModel().getSelectedItem();
+            MenuSection section = requireSelection(menuSectionBox.getValue(), "Menu section");
             MenuItem item = new MenuItem(
                     selected == null ? 0 : selected.getMenuItemID(),
-                    1,
+                    section.getMenuSectionID(),
                     menuTitleField.getText().trim(),
                     menuDescriptionField.getText().trim(),
                     parseDouble(menuPriceField.getText(), "Price"),
@@ -842,6 +861,11 @@ public class ManagerController {
     }
 
     private void clearMenuItemFormFields() {
+        if (!menuSectionBox.getItems().isEmpty()) {
+            menuSectionBox.setValue(menuSectionBox.getItems().getFirst());
+        } else {
+            menuSectionBox.setValue(null);
+        }
         menuTitleField.clear();
         menuDescriptionField.clear();
         menuPriceField.clear();
@@ -1187,6 +1211,7 @@ public class ManagerController {
             clearMenuItemFormFields();
             return;
         }
+        menuSectionBox.setValue(menuSectionById.get(item.getSectionId()));
         menuTitleField.setText(item.getTitle());
         menuDescriptionField.setText(safe(item.getDescription()));
         menuPriceField.setText(String.valueOf(item.getPrice()));
@@ -1304,6 +1329,11 @@ public class ManagerController {
 
     private String formatDateTime(LocalDateTime value) {
         return value == null ? "" : value.format(DATE_TIME_FORMATTER);
+    }
+
+    private String resolveMenuSectionName(int sectionId) {
+        MenuSection section = menuSectionById.get(sectionId);
+        return section == null ? String.valueOf(sectionId) : section.getTitle();
     }
 
     private double calculateSelectedOrderTotal() {

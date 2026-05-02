@@ -4,6 +4,7 @@ import com.example.restaurantmanagementsystem.Model.DashboardStats;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Customer;
@@ -66,6 +67,10 @@ public class ManagementService {
 
     public List<MenuItem> getMenuItems() {
         return repository.findMenuItems();
+    }
+
+    public List<MenuSection> getMenuSections() {
+        return repository.findMenuSections();
     }
 
     public MenuItem createMenuItem(MenuItem item) {

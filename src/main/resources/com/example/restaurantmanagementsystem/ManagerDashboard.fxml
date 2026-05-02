@@ -194,9 +194,9 @@
                <content>
                   <SplitPane dividerPositions="0.62">
                      <items>
-                        <TableView fx:id="menuItemTable">
+                              <TableView fx:id="menuItemTable">
                            <columns>
-                              <TableColumn fx:id="menuSectionIdColumn" prefWidth="90.0" text="Section" />
+                              <TableColumn fx:id="menuSectionIdColumn" prefWidth="140.0" text="Section" />
                               <TableColumn fx:id="menuTitleColumn" prefWidth="250.0" text="Title" />
                               <TableColumn fx:id="menuPriceColumn" prefWidth="120.0" text="Price" />
                               <TableColumn fx:id="menuAvailableColumn" prefWidth="90.0" text="Available" />
@@ -206,6 +206,12 @@
                            <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
                            <children>
                               <Label text="Menu Item Form" />
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                 <children>
+                                    <Label minWidth="60.0" text="Section" />
+                                    <ChoiceBox fx:id="menuSectionBox" prefWidth="220.0" />
+                                 </children>
+                              </HBox>
                               <GridPane hgap="10.0" vgap="10.0">
                                  <children>
                                     <Label text="Title" GridPane.rowIndex="0" />

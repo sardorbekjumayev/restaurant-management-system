@@ -11,6 +11,7 @@ import com.example.restaurantmanagementsystem.Model.Orders.MealItem;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Account;
@@ -250,6 +251,26 @@ public class ManagementRepository {
             return items;
         } catch (SQLException e) {
             throw new IllegalStateException("Menu item listni olishda xatolik yuz berdi", e);
+        }
+    }
+
+    public List<MenuSection> findMenuSections() {
+        String sql = "SELECT * FROM menu_sections ORDER BY id";
+        List<MenuSection> sections = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                sections.add(new MenuSection(
+                        resultSet.getInt("id"),
+                        resultSet.getInt("menu_id"),
+                        resultSet.getString("title"),
+                        resultSet.getString("description")
+                ));
+            }
+            return sections;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Menu section listni olishda xatolik yuz berdi", e);
         }
     }
 
