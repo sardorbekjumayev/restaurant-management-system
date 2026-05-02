@@ -3,6 +3,7 @@ package com.example.restaurantmanagementsystem.service;
 import com.example.restaurantmanagementsystem.Model.DashboardStats;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
+import com.example.restaurantmanagementsystem.Model.Restaurant.Branch;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
@@ -17,6 +18,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class ManagementService {
+    private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+    private static final String PHONE_PATTERN = "^[+0-9][0-9\\-() ]{6,19}$";
+
     private final ManagementRepository repository;
 
     public ManagementService(User currentUser) {
@@ -36,12 +40,16 @@ public class ManagementService {
         validateText(employee.getFullName(), "Employee name");
         validateText(username, "Username");
         validateText(password, "Password");
+        validateEmail(employee.getEmail(), "Employee email");
+        validatePhone(employee.getPhone(), "Employee phone");
         return repository.createEmployee(employee, username, password);
     }
 
     public void updateEmployee(Employee employee, String username, String password) {
         validateText(employee.getFullName(), "Employee name");
         validateText(username, "Username");
+        validateEmail(employee.getEmail(), "Employee email");
+        validatePhone(employee.getPhone(), "Employee phone");
         repository.updateEmployee(employee, username, password);
     }
 
@@ -53,13 +61,43 @@ public class ManagementService {
         return repository.findCustomers();
     }
 
+    public List<Branch> getBranches() {
+        return repository.findBranches();
+    }
+
+    public Branch createBranch(Branch branch) {
+        validateText(branch.getName(), "Branch name");
+        if (branch.getLocation() == null) {
+            throw new IllegalArgumentException("Branch address bo'sh bo'lmasligi kerak");
+        }
+        validateText(branch.getLocation().getStreet(), "Street");
+        validateText(branch.getLocation().getCity(), "City");
+        validateText(branch.getLocation().getCountry(), "Country");
+        return repository.createBranch(branch);
+    }
+
+    public void assignManagerToBranch(int employeeId, int branchId) {
+        repository.assignManagerToBranch(employeeId, branchId);
+    }
+
+    public void deleteBranch(Branch branch) {
+        if (branch == null || branch.getId() <= 0) {
+            throw new IllegalArgumentException("Branch tanlanishi kerak");
+        }
+        repository.deleteBranch(branch.getId());
+    }
+
     public Customer createCustomer(Customer customer) {
         validateText(customer.getFullName(), "Customer name");
+        validateEmail(customer.getEmail(), "Customer email");
+        validatePhone(customer.getPhone(), "Customer phone");
         return repository.createCustomer(customer);
     }
 
     public void updateCustomer(Customer customer) {
         validateText(customer.getFullName(), "Customer name");
+        validateEmail(customer.getEmail(), "Customer email");
+        validatePhone(customer.getPhone(), "Customer phone");
         repository.updateCustomer(customer);
     }
 
@@ -77,11 +115,13 @@ public class ManagementService {
 
     public MenuItem createMenuItem(MenuItem item) {
         validateText(item.getTitle(), "Menu title");
+        validatePositive(item.getSectionId(), "Menu section");
         return repository.createMenuItem(item);
     }
 
     public void updateMenuItem(MenuItem item) {
         validateText(item.getTitle(), "Menu title");
+        validatePositive(item.getSectionId(), "Menu section");
         repository.updateMenuItem(item);
     }
 
@@ -200,6 +240,26 @@ public class ManagementService {
     private void validateText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " bo'sh bo'lmasligi kerak");
+        }
+    }
+
+    private void validateEmail(String value, String fieldName) {
+        validateText(value, fieldName);
+        if (!value.trim().matches(EMAIL_PATTERN)) {
+            throw new IllegalArgumentException(fieldName + " to'g'ri email formatida bo'lishi kerak");
+        }
+    }
+
+    private void validatePhone(String value, String fieldName) {
+        validateText(value, fieldName);
+        if (!value.trim().matches(PHONE_PATTERN)) {
+            throw new IllegalArgumentException(fieldName + " faqat raqamga mos formatda bo'lishi kerak");
+        }
+    }
+
+    private void validatePositive(int value, String fieldName) {
+        if (value <= 0) {
+            throw new IllegalArgumentException(fieldName + " tanlanishi kerak");
         }
     }
 }

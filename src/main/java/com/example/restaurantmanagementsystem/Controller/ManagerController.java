@@ -9,9 +9,12 @@ import com.example.restaurantmanagementsystem.Model.DashboardStats;
 import com.example.restaurantmanagementsystem.Model.Orders.MealItem;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
+import com.example.restaurantmanagementsystem.Model.Restaurant.Branch;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
+import com.example.restaurantmanagementsystem.Model.Users.Address;
 import com.example.restaurantmanagementsystem.Model.Users.Customer;
 import com.example.restaurantmanagementsystem.Model.Users.Employee;
 import com.example.restaurantmanagementsystem.Model.Users.Reservation;
@@ -71,6 +74,7 @@ public class ManagerController {
     private final Map<Integer, String> customerNameMap = new HashMap<>();
     private final Map<Integer, String> employeeNameMap = new HashMap<>();
     private final Map<Integer, String> orderPaymentStatusMap = new HashMap<>();
+    private final Map<Integer, String> menuSectionNameMap = new HashMap<>();
     private List<Table> cachedBranchTables = List.of();
 
     public static final class OrderItemRow {
@@ -123,6 +127,16 @@ public class ManagerController {
     @FXML
     private Label welcomeLabel;
     @FXML
+    private Label employeeOverviewTitleLabel;
+    @FXML
+    private Label customerOverviewTitleLabel;
+    @FXML
+    private Label menuOverviewTitleLabel;
+    @FXML
+    private Label reservationOverviewTitleLabel;
+    @FXML
+    private Label activeOrderOverviewTitleLabel;
+    @FXML
     private Label employeeCountLabel;
     @FXML
     private Label customerCountLabel;
@@ -143,6 +157,8 @@ public class ManagerController {
     @FXML
     private Tab employeeTab;
     @FXML
+    private Tab branchTab;
+    @FXML
     private Tab customerTabPane;
     @FXML
     private Tab menuTab;
@@ -156,6 +172,16 @@ public class ManagerController {
     private Tab paymentsTab;
     @FXML
     private VBox diningTableForm;
+    @FXML
+    private VBox employeeOverviewCard;
+    @FXML
+    private VBox customerOverviewCard;
+    @FXML
+    private VBox menuOverviewCard;
+    @FXML
+    private VBox reservationOverviewCard;
+    @FXML
+    private VBox activeOrderOverviewCard;
 
     @FXML
     private TableView<Employee> employeeTable;
@@ -179,6 +205,31 @@ public class ManagerController {
     private TextField employeeDateJoinedField;
     @FXML
     private ChoiceBox<String> employeeRoleBox;
+    @FXML
+    private Label employeeBranchLabel;
+    @FXML
+    private ChoiceBox<Branch> employeeBranchBox;
+
+    @FXML
+    private TableView<Branch> branchTable;
+    @FXML
+    private TableColumn<Branch, String> branchNameColumn;
+    @FXML
+    private TableColumn<Branch, String> branchAddressColumn;
+    @FXML
+    private TableColumn<Branch, String> branchManagerColumn;
+    @FXML
+    private TextField branchNameField;
+    @FXML
+    private TextField branchStreetField;
+    @FXML
+    private TextField branchCityField;
+    @FXML
+    private TextField branchDistrictField;
+    @FXML
+    private TextField branchCountryField;
+    @FXML
+    private ChoiceBox<Employee> branchManagerBox;
 
     @FXML
     private TableView<Customer> customerTable;
@@ -198,13 +249,15 @@ public class ManagerController {
     @FXML
     private TableView<MenuItem> menuItemTable;
     @FXML
-    private TableColumn<MenuItem, Number> menuSectionIdColumn;
+    private TableColumn<MenuItem, String> menuSectionIdColumn;
     @FXML
     private TableColumn<MenuItem, String> menuTitleColumn;
     @FXML
     private TableColumn<MenuItem, Number> menuPriceColumn;
     @FXML
     private TableColumn<MenuItem, Boolean> menuAvailableColumn;
+    @FXML
+    private ChoiceBox<MenuSection> menuSectionBox;
     @FXML
     private TextField menuTitleField;
     @FXML
@@ -338,7 +391,7 @@ public class ManagerController {
 
     @FXML
     public void initialize() {
-        employeeRoleBox.setItems(FXCollections.observableArrayList("Manager", "Waiter", "Receptionist", "Chef", "Cashier"));
+        employeeRoleBox.setItems(FXCollections.observableArrayList("Waiter", "Receptionist", "Chef", "Cashier"));
         diningTableStatusBox.setItems(FXCollections.observableArrayList(
                 TableStatus.FREE.name(), TableStatus.RESERVED.name(), TableStatus.OCCUPIED.name(), TableStatus.OUT_OF_SERVICE.name()));
         reservationStatusBox.setItems(FXCollections.observableArrayList(
@@ -354,6 +407,7 @@ public class ManagerController {
         configureReservationFormControls();
         configureOrderFormControls();
         configurePaymentFormControls();
+        configureAdminFormControls();
         configureTables();
         configureSelectionListeners();
         setDefaultFormValues();
@@ -368,6 +422,10 @@ public class ManagerController {
     }
 
     private void configureTables() {
+        branchNameColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getName()));
+        branchAddressColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getAddressSummary()));
+        branchManagerColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(safe(data.getValue().getManagerName())));
+
         employeeNameColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getFullName()));
         employeeRoleColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getRole()));
         employeeUsernameColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getAccount().getUsername()));
@@ -376,7 +434,9 @@ public class ManagerController {
         customerEmailColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(safe(data.getValue().getEmail())));
         customerPhoneColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getPhone()));
 
-        menuSectionIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getSectionId()));
+        menuSectionIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(
+                menuSectionNameMap.getOrDefault(data.getValue().getSectionId(), String.valueOf(data.getValue().getSectionId()))
+        ));
         menuTitleColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getTitle()));
         menuPriceColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getPrice()));
         menuAvailableColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().isAvailable()));
@@ -613,7 +673,44 @@ public class ManagerController {
         });
     }
 
+    private void configureAdminFormControls() {
+        employeeBranchBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Branch branch) {
+                return branch == null ? "" : branch.getName();
+            }
+
+            @Override
+            public Branch fromString(String string) {
+                return null;
+            }
+        });
+        branchManagerBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(Employee employee) {
+                return employee == null ? "" : employee.getFullName() + " (" + employee.getAccount().getUsername() + ")";
+            }
+
+            @Override
+            public Employee fromString(String string) {
+                return null;
+            }
+        });
+        menuSectionBox.setConverter(new StringConverter<>() {
+            @Override
+            public String toString(MenuSection section) {
+                return section == null ? "" : section.getTitle();
+            }
+
+            @Override
+            public MenuSection fromString(String string) {
+                return null;
+            }
+        });
+    }
+
     private void configureSelectionListeners() {
+        branchTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> fillBranchForm(newValue));
         employeeTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> fillEmployeeForm(newValue));
         customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> fillCustomerForm(newValue));
         menuItemTable.getSelectionModel().selectedItemProperty().addListener((obs, oldValue, newValue) -> fillMenuItemForm(newValue));
@@ -632,6 +729,22 @@ public class ManagerController {
             reservationCountLabel.setText(String.valueOf(stats.getReservationCount()));
             activeOrderCountLabel.setText(String.valueOf(stats.getActiveOrderCount()));
 
+            if ("Admin".equalsIgnoreCase(currentUser.getRole())) {
+                List<Branch> branches = managementService.getBranches();
+                List<Employee> employees = managementService.getEmployees();
+
+                employeeTable.setItems(FXCollections.observableArrayList(
+                        employees.stream().filter(e -> "Manager".equalsIgnoreCase(e.getRole())).toList()
+                ));
+                branchTable.setItems(FXCollections.observableArrayList(branches));
+                employeeBranchBox.setItems(FXCollections.observableArrayList(branches));
+                branchManagerBox.setItems(FXCollections.observableArrayList(
+                        employees.stream().filter(e -> "Manager".equalsIgnoreCase(e.getRole())).toList()
+                ));
+                return;
+            }
+
+            List<MenuSection> menuSections = managementService.getMenuSections();
             List<MenuItem> menuItems = managementService.getMenuItems();
             List<Table> tables = managementService.getTables();
             List<Customer> customers = managementService.getCustomers();
@@ -639,6 +752,7 @@ public class ManagerController {
             List<Order> orders = managementService.getOrders();
             List<Reservation> reservations = managementService.getReservations();
             List<PaymentRecord> payments = managementService.getPayments();
+            List<Branch> branches = managementService.getBranches();
 
             cachedBranchTables = List.copyOf(tables);
 
@@ -646,10 +760,13 @@ public class ManagerController {
             customers.forEach(c -> customerNameMap.put(c.getCustomerId(), c.getFullName()));
             employeeNameMap.clear();
             employees.forEach(e -> employeeNameMap.put(e.getEmployeeID(), e.getFullName()));
+            menuSectionNameMap.clear();
+            menuSections.forEach(section -> menuSectionNameMap.put(section.getMenuSectionID(), section.getTitle()));
             orderPaymentStatusMap.clear();
             payments.forEach(payment -> orderPaymentStatusMap.put(payment.getOrderId(), payment.getStatus().name()));
 
             employeeTable.setItems(FXCollections.observableArrayList(employees));
+            branchTable.setItems(FXCollections.observableArrayList(branches));
             customerTable.setItems(FXCollections.observableArrayList(customers));
             menuItemTable.setItems(FXCollections.observableArrayList(menuItems));
             diningTableTable.setItems(FXCollections.observableArrayList(tables));
@@ -657,6 +774,7 @@ public class ManagerController {
             orderTable.setItems(FXCollections.observableArrayList(orders));
             paymentTable.setItems(FXCollections.observableArrayList(payments));
 
+            menuSectionBox.setItems(FXCollections.observableArrayList(menuSections));
             orderCustomerBox.setItems(FXCollections.observableArrayList(customers));
             List<Employee> waiters = employees
                     .stream()
@@ -665,11 +783,25 @@ public class ManagerController {
             orderWaiterBox.setItems(FXCollections.observableArrayList(waiters));
             orderMenuItemBox.setItems(FXCollections.observableArrayList(menuItems.stream().filter(MenuItem::isAvailable).toList()));
             refreshOrderTableOptions(orderCustomerBox.getValue(), orderTableBox.getValue() == null ? null : orderTableBox.getValue().getTableId());
+            employeeBranchBox.setItems(FXCollections.observableArrayList(branches));
+            branchManagerBox.setItems(FXCollections.observableArrayList(
+                    employees.stream().filter(e -> "Manager".equalsIgnoreCase(e.getRole())).toList()
+            ));
 
             reservationCustomerBox.setItems(FXCollections.observableArrayList(customers));
             reservationTableBox.setItems(FXCollections.observableArrayList(tables));
 
             paymentOrderBox.setItems(FXCollections.observableArrayList(orders));
+
+            if ("Admin".equalsIgnoreCase(currentUser.getRole())) {
+                employeeTable.setItems(FXCollections.observableArrayList(
+                        employees.stream().filter(e -> "Manager".equalsIgnoreCase(e.getRole())).toList()
+                ));
+            } else if ("Manager".equalsIgnoreCase(currentUser.getRole())) {
+                employeeTable.setItems(FXCollections.observableArrayList(
+                        employees.stream().filter(e -> !"Manager".equalsIgnoreCase(e.getRole())).toList()
+                ));
+            }
         } catch (Exception e) {
             setStatus(e.getMessage(), true);
         }
@@ -691,6 +823,8 @@ public class ManagerController {
         paymentStatusBox.setValue(PaymentStatus.PENDING.name());
         paymentCreatedAtField.setText(formatDateTime(LocalDateTime.now()));
         paymentOrderBox.setValue(null);
+        branchManagerBox.setValue(null);
+        employeeBranchBox.setValue(null);
     }
 
 
@@ -713,9 +847,26 @@ public class ManagerController {
 
         diningTableForm.setVisible(true);
         diningTableForm.setManaged(true);
+        employeeBranchLabel.setVisible(false);
+        employeeBranchLabel.setManaged(false);
+        employeeBranchBox.setVisible(false);
+        employeeBranchBox.setManaged(false);
+
+        setOverviewAdminMode(false);
 
         mainTabPane.getTabs().setAll(overviewTab);
         switch (currentUser.getRole()) {
+            case "Admin" -> {
+                mainTabPane.getTabs().setAll(overviewTab, branchTab, employeeTab);
+                employeeTab.setText("Managers");
+                employeeRoleBox.setItems(FXCollections.observableArrayList("Manager"));
+                employeeRoleBox.setValue("Manager");
+                employeeBranchLabel.setVisible(true);
+                employeeBranchLabel.setManaged(true);
+                employeeBranchBox.setVisible(true);
+                employeeBranchBox.setManaged(true);
+                setOverviewAdminMode(true);
+            }
             case "Manager" -> mainTabPane.getTabs().addAll(employeeTab, customerTabPane, menuTab, tablesTab, reservationsTab, ordersTab, paymentsTab);
             case "Receptionist" -> {
                 mainTabPane.getTabs().addAll(customerTabPane, tablesTab, reservationsTab);
@@ -741,6 +892,21 @@ public class ManagerController {
             case "Cashier" -> mainTabPane.getTabs().setAll(paymentsTab);
             default -> mainTabPane.getTabs().addAll(customerTabPane, reservationsTab);
         }
+        if (!"Admin".equalsIgnoreCase(currentUser.getRole())) {
+            employeeTab.setText("Employees");
+            employeeRoleBox.setItems(FXCollections.observableArrayList("Waiter", "Receptionist", "Chef", "Cashier"));
+        }
+    }
+
+    private void setOverviewAdminMode(boolean adminMode) {
+        employeeOverviewTitleLabel.setText(adminMode ? "Total Employees" : "Employees");
+        customerOverviewTitleLabel.setText(adminMode ? "Branches" : "Customers");
+        menuOverviewCard.setVisible(!adminMode);
+        menuOverviewCard.setManaged(!adminMode);
+        reservationOverviewCard.setVisible(!adminMode);
+        reservationOverviewCard.setManaged(!adminMode);
+        activeOrderOverviewCard.setVisible(!adminMode);
+        activeOrderOverviewCard.setManaged(!adminMode);
     }
 
 
@@ -748,6 +914,9 @@ public class ManagerController {
     public void saveEmployee() {
         try {
             Employee selected = employeeTable.getSelectionModel().getSelectedItem();
+            Branch selectedBranch = "Admin".equalsIgnoreCase(currentUser.getRole())
+                    ? requireSelection(employeeBranchBox.getValue(), "Branch")
+                    : null;
             Employee employee = new Employee(
                     employeeNameField.getText().trim(),
                     employeeEmailField.getText().trim(),
@@ -756,7 +925,7 @@ public class ManagerController {
                     employeeDateJoinedField.getText().trim(),
                     employeeRoleBox.getValue(),
                     selected == null ? null : selected.getAccount(),
-                    currentUser.getBranchId()
+                    selectedBranch == null ? currentUser.getBranchId() : selectedBranch.getId()
             );
 
             if (selected == null) {
@@ -799,7 +968,8 @@ public class ManagerController {
         employeeUsernameField.clear();
         employeePasswordField.clear();
         employeeDateJoinedField.setText(LocalDate.now().toString());
-        employeeRoleBox.setValue("Waiter");
+        employeeRoleBox.setValue("Admin".equalsIgnoreCase(currentUser.getRole()) ? "Manager" : "Waiter");
+        employeeBranchBox.setValue(null);
     }
 
     @FXML
@@ -856,9 +1026,10 @@ public class ManagerController {
     public void saveMenuItem() {
         try {
             MenuItem selected = menuItemTable.getSelectionModel().getSelectedItem();
+            MenuSection selectedSection = requireSelection(menuSectionBox.getValue(), "Menu section");
             MenuItem item = new MenuItem(
                     selected == null ? 0 : selected.getMenuItemID(),
-                    currentUser.getBranchId(),
+                    selectedSection.getMenuSectionID(),
                     menuTitleField.getText().trim(),
                     menuDescriptionField.getText().trim(),
                     parseDouble(menuPriceField.getText(), "Price"),
@@ -914,6 +1085,7 @@ public class ManagerController {
     }
 
     private void clearMenuItemFormFields() {
+        menuSectionBox.setValue(null);
         menuTitleField.clear();
         menuDescriptionField.clear();
         menuPriceField.clear();
@@ -942,7 +1114,7 @@ public class ManagerController {
             Table selected = diningTableTable.getSelectionModel().getSelectedItem();
             Table table = new Table(
                     selected == null ? 0 : selected.getTableId(),
-                    1, // Default branch ID
+                    currentUser.getBranchId(),
                     diningTableNumberField.getText().trim(),
                     TableStatus.valueOf(diningTableStatusBox.getValue()),
                     parseInt(diningTableCapacityField.getText(), "Capacity"),
@@ -986,6 +1158,72 @@ public class ManagerController {
         diningTableStatusBox.setValue(TableStatus.FREE.name());
         diningTableCapacityField.clear();
         diningTableLocationField.clear();
+    }
+
+    @FXML
+    public void saveBranch() {
+        try {
+            Branch branch = new Branch(
+                    branchNameField.getText().trim(),
+                    new Address(0,
+                            branchStreetField.getText().trim(),
+                            branchCityField.getText().trim(),
+                            branchDistrictField.getText().trim(),
+                            "",
+                            branchCountryField.getText().trim())
+            );
+            Branch created = managementService.createBranch(branch);
+            Employee selectedManager = branchManagerBox.getValue();
+            if (selectedManager != null) {
+                managementService.assignManagerToBranch(selectedManager.getEmployeeID(), created.getId());
+            }
+            setStatus("Branch qo'shildi", false);
+            refreshAll();
+            clearBranchForm();
+        } catch (Exception e) {
+            setStatus(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    public void assignBranchManager() {
+        try {
+            Branch branch = requireSelection(branchTable.getSelectionModel().getSelectedItem(), "Branch");
+            Employee manager = requireSelection(branchManagerBox.getValue(), "Manager");
+            managementService.assignManagerToBranch(manager.getEmployeeID(), branch.getId());
+            setStatus("Manager branchga biriktirildi", false);
+            refreshAll();
+        } catch (Exception e) {
+            setStatus(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    public void deleteBranch() {
+        try {
+            Branch selected = requireSelection(branchTable.getSelectionModel().getSelectedItem(), "Branch");
+            managementService.deleteBranch(selected);
+            refreshAll();
+            clearBranchForm();
+            setStatus("Branch o'chirildi", false);
+        } catch (Exception e) {
+            setStatus(e.getMessage(), true);
+        }
+    }
+
+    @FXML
+    public void clearBranchForm() {
+        branchTable.getSelectionModel().clearSelection();
+        clearBranchFormFields();
+    }
+
+    private void clearBranchFormFields() {
+        branchNameField.clear();
+        branchStreetField.clear();
+        branchCityField.clear();
+        branchDistrictField.clear();
+        branchCountryField.clear();
+        branchManagerBox.setValue(null);
     }
 
     @FXML
@@ -1272,6 +1510,32 @@ public class ManagerController {
         employeePasswordField.clear();
         employeeDateJoinedField.setText(employee.getDateJoined());
         employeeRoleBox.setValue(employee.getRole());
+        if ("Admin".equalsIgnoreCase(currentUser.getRole())) {
+            Branch branch = employeeBranchBox.getItems()
+                    .stream()
+                    .filter(candidate -> candidate.getId() == employee.getBranchId())
+                    .findFirst()
+                    .orElse(null);
+            employeeBranchBox.setValue(branch);
+        }
+    }
+
+    private void fillBranchForm(Branch branch) {
+        if (branch == null) {
+            clearBranchFormFields();
+            return;
+        }
+        branchNameField.setText(branch.getName());
+        branchStreetField.setText(branch.getLocation() == null ? "" : safe(branch.getLocation().getStreet()));
+        branchCityField.setText(branch.getLocation() == null ? "" : safe(branch.getLocation().getCity()));
+        branchDistrictField.setText(branch.getLocation() == null ? "" : safe(branch.getLocation().getDistrict()));
+        branchCountryField.setText(branch.getLocation() == null ? "" : safe(branch.getLocation().getCountry()));
+        Employee manager = branchManagerBox.getItems()
+                .stream()
+                .filter(candidate -> branch.getManagerName() != null && branch.getManagerName().equalsIgnoreCase(candidate.getFullName()))
+                .findFirst()
+                .orElse(null);
+        branchManagerBox.setValue(manager);
     }
 
     private void fillCustomerForm(Customer customer) {
@@ -1289,6 +1553,12 @@ public class ManagerController {
             clearMenuItemFormFields();
             return;
         }
+        menuSectionBox.setValue(
+                menuSectionBox.getItems().stream()
+                        .filter(section -> section.getMenuSectionID() == item.getSectionId())
+                        .findFirst()
+                        .orElse(null)
+        );
         menuTitleField.setText(item.getTitle());
         menuDescriptionField.setText(safe(item.getDescription()));
         menuPriceField.setText(String.valueOf(item.getPrice()));

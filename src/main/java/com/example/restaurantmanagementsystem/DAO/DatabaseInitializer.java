@@ -228,55 +228,56 @@ public final class DatabaseInitializer {
     }
 
     private static void seedDefaultData(Connection connection) throws SQLException {
-        insertAddress(connection, 1, "Amir Temur ko'chasi 10", "Tashkent", "Yunusobod", "100000", "Uzbekistan");
-        insertAddress(connection, 2, "Buyuk Ipak Yo'li 42", "Tashkent", "Mirzo Ulug'bek", "100077", "Uzbekistan");
-        insertBranch(connection, 1, "Main Branch", 1);
-        insertBranch(connection, 2, "East Branch", 2);
+//        insertAddress(connection, 1, "Amir Temur ko'chasi 10", "Tashkent", "Yunusobod", "100000", "Uzbekistan");
+//        insertAddress(connection, 2, "Buyuk Ipak Yo'li 42", "Tashkent", "Mirzo Ulug'bek", "100077", "Uzbekistan");
+//        insertBranch(connection, 1, "Main Branch", 1);
+//        insertBranch(connection, 2, "East Branch", 2);
 
-        insertAccount(connection, 2, "manager", PasswordUtil.hash("pass"), "Manager", "ACTIVE");
-        insertAccount(connection, 3, "waiter", PasswordUtil.hash("123"), "Waiter", "ACTIVE");
-        insertAccount(connection, 4, "chef", PasswordUtil.hash("chef123"), "Chef", "ACTIVE");
-        insertAccount(connection, 5, "reception", PasswordUtil.hash("recep123"), "Receptionist", "ACTIVE");
-        insertAccount(connection, 6, "cashier", PasswordUtil.hash("cash123"), "Cashier", "ACTIVE");
-        insertAccount(connection, 7, "manager2", PasswordUtil.hash("pass2"), "Manager", "ACTIVE");
-
-        insertEmployee(connection, 1, "Ali Manager", "manager@restaurant.uz", "+998901112233",
-                "Manager", "2025-01-10", 2, 1);
-        insertEmployee(connection, 2, "Vali Waiter", "waiter@restaurant.uz", "+998901112244",
-                "Waiter", "2025-02-12", 3, 1);
-        insertEmployee(connection, 3, "Bek Chef", "chef@restaurant.uz", "+998901112255",
-                "Chef", "2025-02-14", 4, 1);
-        insertEmployee(connection, 4, "Malika Reception", "reception@restaurant.uz", "+998901112266",
-                "Receptionist", "2025-02-17", 5, 1);
-        insertEmployee(connection, 5, "Dilshod Cashier", "cashier@restaurant.uz", "+998901112277",
-                "Cashier", "2025-02-17", 6, 1);
-        insertEmployee(connection, 6, "Sardor Manager", "manager2@restaurant.uz", "+998901112288",
-                "Manager", "2025-03-01", 7, 2);
-
-        insertCustomer(connection, 1, "Aziza Karimova", "aziza@mail.com", "+998971112233", 1);
-        insertCustomer(connection, 2, "Bekzod Aliyev", "bekzod@mail.com", "+998971112244", 2);
-
-        insertMenu(connection, 1, 1, "Main Menu", "Daily restaurant menu");
-        insertMenu(connection, 2, 2, "East Menu", "Branch specific menu");
-        insertMenuSection(connection, 1, 1, "Main Dishes", "Signature dishes");
-        insertMenuSection(connection, 2, 1, "Drinks", "Fresh drinks");
-        insertMenuSection(connection, 3, 1, "Desserts", "Sweet desserts");
-        insertMenuSection(connection, 4, 2, "Main Dishes", "East branch dishes");
-        insertMenuSection(connection, 5, 2, "Drinks", "East branch drinks");
-        insertMenuItem(connection, 1, 1, "Plov", "Traditional Uzbek plov", 45000, true);
-        insertMenuItem(connection, 2, 1, "Steak", "Medium grilled steak", 95000, true);
-        insertMenuItem(connection, 3, 2, "Lemonade", "Homemade lemonade", 18000, true);
-        insertMenuItem(connection, 4, 4, "Lagman", "Hand-pulled noodle soup", 42000, true);
-        insertMenuItem(connection, 5, 5, "Tea", "Green tea pot", 12000, true);
-
-        insertTable(connection, 1, 1, "T1", "FREE", 4, 1);
-        insertTable(connection, 2, 1, "T2", "RESERVED", 6, 1);
-        insertTable(connection, 3, 1, "T3", "OCCUPIED", 2, 2);
-        insertTable(connection, 4, 2, "E1", "FREE", 4, 1);
-        insertTable(connection, 5, 2, "E2", "FREE", 6, 2);
-        migrateExistingRows(connection);
-        addColumnIfMissing(connection, "menu_items", "image_url", "ALTER TABLE menu_items ADD COLUMN image_url VARCHAR(500)");
-    }
+        insertAccount(connection, 1, "admin", PasswordUtil.hash("admin123"), "Admin", "ACTIVE");
+//        insertAccount(connection, 2, "manager", PasswordUtil.hash("pass"), "Manager", "ACTIVE");
+//        insertAccount(connection, 3, "waiter", PasswordUtil.hash("123"), "Waiter", "ACTIVE");
+//        insertAccount(connection, 4, "chef", PasswordUtil.hash("chef123"), "Chef", "ACTIVE");
+//        insertAccount(connection, 5, "reception", PasswordUtil.hash("recep123"), "Receptionist", "ACTIVE");
+//        insertAccount(connection, 6, "cashier", PasswordUtil.hash("cash123"), "Cashier", "ACTIVE");
+//        insertAccount(connection, 7, "manager2", PasswordUtil.hash("pass2"), "Manager", "ACTIVE");
+//
+//        insertEmployee(connection, 1, "Ali Manager", "manager@restaurant.uz", "+998901112233",
+//                "Manager", "2025-01-10", 2, 1);
+//        insertEmployee(connection, 2, "Vali Waiter", "waiter@restaurant.uz", "+998901112244",
+//                "Waiter", "2025-02-12", 3, 1);
+//        insertEmployee(connection, 3, "Bek Chef", "chef@restaurant.uz", "+998901112255",
+//                "Chef", "2025-02-14", 4, 1);
+//        insertEmployee(connection, 4, "Malika Reception", "reception@restaurant.uz", "+998901112266",
+//                "Receptionist", "2025-02-17", 5, 1);
+//        insertEmployee(connection, 5, "Dilshod Cashier", "cashier@restaurant.uz", "+998901112277",
+//                "Cashier", "2025-02-17", 6, 1);
+//        insertEmployee(connection, 6, "Sardor Manager", "manager2@restaurant.uz", "+998901112288",
+//                "Manager", "2025-03-01", 7, 2);
+//
+//        insertCustomer(connection, 1, "Aziza Karimova", "aziza@mail.com", "+998971112233", 1);
+//        insertCustomer(connection, 2, "Bekzod Aliyev", "bekzod@mail.com", "+998971112244", 2);
+//
+//        insertMenu(connection, 1, 1, "Main Menu", "Daily restaurant menu");
+//        insertMenu(connection, 2, 2, "East Menu", "Branch specific menu");
+//        insertMenuSection(connection, 1, 1, "Main Dishes", "Signature dishes");
+//        insertMenuSection(connection, 2, 1, "Drinks", "Fresh drinks");
+//        insertMenuSection(connection, 3, 1, "Desserts", "Sweet desserts");
+//        insertMenuSection(connection, 4, 2, "Main Dishes", "East branch dishes");
+//        insertMenuSection(connection, 5, 2, "Drinks", "East branch drinks");
+//        insertMenuItem(connection, 1, 1, "Plov", "Traditional Uzbek plov", 45000, true);
+//        insertMenuItem(connection, 2, 1, "Steak", "Medium grilled steak", 95000, true);
+//        insertMenuItem(connection, 3, 2, "Lemonade", "Homemade lemonade", 18000, true);
+//        insertMenuItem(connection, 4, 4, "Lagman", "Hand-pulled noodle soup", 42000, true);
+//        insertMenuItem(connection, 5, 5, "Tea", "Green tea pot", 12000, true);
+//
+//        insertTable(connection, 1, 1, "T1", "FREE", 4, 1);
+//        insertTable(connection, 2, 1, "T2", "RESERVED", 6, 1);
+//        insertTable(connection, 3, 1, "T3", "OCCUPIED", 2, 2);
+//        insertTable(connection, 4, 2, "E1", "FREE", 4, 1);
+//        insertTable(connection, 5, 2, "E2", "FREE", 6, 2);
+//        migrateExistingRows(connection);
+//        addColumnIfMissing(connection, "menu_items", "image_url", "ALTER TABLE menu_items ADD COLUMN image_url VARCHAR(500)");
+     }
 
     private static void insertAddress(Connection connection, int id, String street, String city,
                                       String district, String postalCode, String country) throws SQLException {
