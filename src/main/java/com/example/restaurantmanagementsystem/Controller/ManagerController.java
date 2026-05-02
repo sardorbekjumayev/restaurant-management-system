@@ -1193,11 +1193,15 @@ public class ManagerController {
         try {
             PaymentRecord selected = paymentTable.getSelectionModel().getSelectedItem();
             Order order = requireSelection(paymentOrderBox.getValue(), "Order");
+            PaymentRecord existingForOrder = managementService.getPaymentByOrderId(order.getOrderID());
+            int paymentId = selected != null
+                    ? selected.getId()
+                    : existingForOrder == null ? 0 : existingForOrder.getId();
             double amount = isBlank(paymentAmountField.getText())
                     ? order.getTotalAmount()
                     : parseDouble(paymentAmountField.getText(), "Amount");
             PaymentRecord payment = new PaymentRecord(
-                    selected == null ? 0 : selected.getId(),
+                    paymentId,
                     order.getOrderID(),
                     amount,
                     PaymentMethod.valueOf(paymentMethodBox.getValue()),
@@ -1205,7 +1209,7 @@ public class ManagerController {
                     parseDateTime(paymentCreatedAtField.getText()),
                     paymentDetailsField.getText().trim()
             );
-            if (selected == null) {
+            if (paymentId == 0) {
                 managementService.createPayment(payment);
                 setStatus("Payment qo'shildi", false);
             } else {

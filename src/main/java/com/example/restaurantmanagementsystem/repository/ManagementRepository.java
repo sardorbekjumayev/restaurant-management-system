@@ -11,6 +11,7 @@ import com.example.restaurantmanagementsystem.Model.Orders.MealItem;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Account;
@@ -257,6 +258,34 @@ public class ManagementRepository {
             return items;
         } catch (SQLException e) {
             throw new IllegalStateException("Menu item listni olishda xatolik yuz berdi", e);
+        }
+    }
+
+    public List<MenuSection> findMenuSections() {
+        String sql = """
+                SELECT ms.id, ms.menu_id, ms.title, ms.description
+                FROM menu_sections ms
+                JOIN menus m ON m.id = ms.menu_id
+                WHERE m.branch_id = ?
+                ORDER BY ms.id
+                """;
+        List<MenuSection> sections = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, currentUser.getBranchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    sections.add(new MenuSection(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("menu_id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("description")
+                    ));
+                }
+            }
+            return sections;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Menu section listni olishda xatolik yuz berdi", e);
         }
     }
 
@@ -544,25 +573,67 @@ public class ManagementRepository {
     }
 
     public List<PaymentRecord> findPayments() {
-        String sql = "SELECT * FROM payments ORDER BY id";
+        String sql = """
+                SELECT p.*
+                FROM payments p
+                JOIN orders o ON o.id = p.order_id
+                WHERE o.branch_id = ?
+                ORDER BY p.order_id, p.id
+                """;
         List<PaymentRecord> payments = new ArrayList<>();
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                payments.add(new PaymentRecord(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("order_id"),
-                        resultSet.getDouble("amount"),
-                        PaymentMethod.valueOf(resultSet.getString("method")),
-                        PaymentStatus.valueOf(resultSet.getString("status")),
-                        resultSet.getTimestamp("created_at").toLocalDateTime(),
-                        resultSet.getString("details")
-                ));
+        try (Connection connection = DBConnection.getConnection()) {
+            cleanupDuplicatePaymentsForBranch(connection);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, currentUser.getBranchId());
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    while (resultSet.next()) {
+                        payments.add(new PaymentRecord(
+                                resultSet.getInt("id"),
+                                resultSet.getInt("order_id"),
+                                resultSet.getDouble("amount"),
+                                PaymentMethod.valueOf(resultSet.getString("method")),
+                                PaymentStatus.valueOf(resultSet.getString("status")),
+                                resultSet.getTimestamp("created_at").toLocalDateTime(),
+                                resultSet.getString("details")
+                        ));
+                    }
+                }
             }
             return payments;
         } catch (SQLException e) {
             throw new IllegalStateException("Payment listni olishda xatolik yuz berdi", e);
+        }
+    }
+
+    public PaymentRecord findPaymentByOrderId(int orderId) {
+        String sql = """
+                SELECT p.*
+                FROM payments p
+                JOIN orders o ON o.id = p.order_id
+                WHERE p.order_id = ? AND o.branch_id = ?
+                ORDER BY p.id DESC
+                LIMIT 1
+                """;
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, currentUser.getBranchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new PaymentRecord(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("order_id"),
+                            resultSet.getDouble("amount"),
+                            PaymentMethod.valueOf(resultSet.getString("method")),
+                            PaymentStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getTimestamp("created_at").toLocalDateTime(),
+                            resultSet.getString("details")
+                    );
+                }
+                return null;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Paymentni order bo'yicha olishda xatolik yuz berdi", e);
         }
     }
 
@@ -571,12 +642,29 @@ public class ManagementRepository {
                 INSERT INTO payments (order_id, amount, method, status, created_at, details)
                 VALUES (?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            fillPaymentStatement(statement, payment);
-            statement.executeUpdate();
-            return new PaymentRecord(generatedId(statement, "Payment ID generatsiya bo'lmadi"), payment.getOrderId(),
-                    payment.getAmount(), payment.getMethod(), payment.getStatus(), payment.getCreatedAt(), payment.getDetails());
+        try (Connection connection = DBConnection.getConnection()) {
+            cleanupDuplicatePaymentsForBranch(connection);
+            PaymentRecord existing = findPaymentByOrderId(payment.getOrderId());
+            if (existing != null) {
+                updatePayment(new PaymentRecord(
+                        existing.getId(),
+                        payment.getOrderId(),
+                        payment.getAmount(),
+                        payment.getMethod(),
+                        payment.getStatus(),
+                        payment.getCreatedAt(),
+                        payment.getDetails()
+                ));
+                return new PaymentRecord(existing.getId(), payment.getOrderId(),
+                        payment.getAmount(), payment.getMethod(), payment.getStatus(), payment.getCreatedAt(), payment.getDetails());
+            }
+
+            try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                fillPaymentStatement(statement, payment);
+                statement.executeUpdate();
+                return new PaymentRecord(generatedId(statement, "Payment ID generatsiya bo'lmadi"), payment.getOrderId(),
+                        payment.getAmount(), payment.getMethod(), payment.getStatus(), payment.getCreatedAt(), payment.getDetails());
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Payment qo'shishda xatolik yuz berdi", e);
         }
@@ -595,6 +683,20 @@ public class ManagementRepository {
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Payment yangilashda xatolik yuz berdi", e);
+        }
+    }
+
+    private void cleanupDuplicatePaymentsForBranch(Connection connection) throws SQLException {
+        String sql = """
+                DELETE p1
+                FROM payments p1
+                JOIN payments p2 ON p1.order_id = p2.order_id AND p1.id < p2.id
+                JOIN orders o ON o.id = p1.order_id
+                WHERE o.branch_id = ?
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, currentUser.getBranchId());
+            statement.executeUpdate();
         }
     }
 
@@ -695,6 +797,59 @@ public class ManagementRepository {
             statement.setTimestamp(7, start);
             statement.setInt(8, durationMinutes);
             
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    availableTables.add(new Table(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("branch_id"),
+                            resultSet.getString("table_number"),
+                            TableStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getInt("max_capacity"),
+                            resultSet.getInt("location_id")
+                    ));
+                }
+            }
+            return availableTables;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Available table listni olishda xatolik yuz berdi", e);
+        }
+    }
+
+    public List<Table> findAvailableTables(LocalDateTime reservationTime, int peopleCount, Integer excludeReservationId) {
+        String sql = """
+                SELECT t.*
+                FROM restaurant_tables t
+                WHERE t.branch_id = ?
+                  AND t.max_capacity >= ?
+                  AND t.id NOT IN (
+                      SELECT r.table_id
+                      FROM reservations r
+                      WHERE r.branch_id = ?
+                        AND r.table_id IS NOT NULL
+                        AND r.status IN ('confirmed', 'requested', 'pending', 'checkedIn')
+                        AND (? IS NULL OR r.id <> ?)
+                        AND (
+                            (r.reservation_time <= ? AND DATE_ADD(r.reservation_time, INTERVAL 120 MINUTE) > ?)
+                            OR
+                            (r.reservation_time >= ? AND r.reservation_time < DATE_ADD(?, INTERVAL 120 MINUTE))
+                        )
+                  )
+                ORDER BY t.id
+                """;
+        List<Table> availableTables = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            Timestamp start = Timestamp.valueOf(reservationTime);
+            statement.setInt(1, currentUser.getBranchId());
+            statement.setInt(2, peopleCount);
+            statement.setInt(3, currentUser.getBranchId());
+            statement.setObject(4, excludeReservationId);
+            statement.setObject(5, excludeReservationId);
+            statement.setTimestamp(6, start);
+            statement.setTimestamp(7, start);
+            statement.setTimestamp(8, start);
+            statement.setTimestamp(9, start);
+
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     availableTables.add(new Table(

@@ -153,6 +153,10 @@ public class ManagementService {
         return repository.findPayments();
     }
 
+    public PaymentRecord getPaymentByOrderId(int orderId) {
+        return repository.findPaymentByOrderId(orderId);
+    }
+
     public PaymentRecord createPayment(PaymentRecord payment) {
         return repository.createPayment(payment);
     }
