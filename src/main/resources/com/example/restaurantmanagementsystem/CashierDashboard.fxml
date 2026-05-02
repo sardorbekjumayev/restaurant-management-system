@@ -78,16 +78,6 @@
                               </VBox>
                            </children>
                         </HBox>
-                        <VBox spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
-                           <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
-                           <children>
-                              <Label text="Demo loginlar" />
-                              <Label text="manager / pass" />
-                              <Label text="waiter / 123" />
-                              <Label text="chef / chef123" />
-                              <Label text="reception / recep123" />
-                           </children>
-                        </VBox>
                      </children>
                   </VBox>
                </content>
