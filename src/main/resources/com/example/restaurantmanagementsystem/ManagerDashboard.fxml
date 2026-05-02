@@ -386,6 +386,7 @@
                               <TableColumn fx:id="orderCustomerIdColumn" prefWidth="120.0" text="Customer" />
                               <TableColumn fx:id="orderWaiterIdColumn" prefWidth="120.0" text="Waiter" />
                               <TableColumn fx:id="orderStatusColumn" prefWidth="150.0" text="Status" />
+                              <TableColumn fx:id="orderCashStatusColumn" prefWidth="140.0" text="Cash Status" />
                               <TableColumn fx:id="orderTotalColumn" prefWidth="120.0" text="Total" />
                            </columns>
                         </TableView>
@@ -426,7 +427,6 @@
                                     <javafx.scene.image.ImageView fx:id="orderItemImageView" fitHeight="60.0" fitWidth="60.0" preserveRatio="true" />
 
                                     <TextField fx:id="orderItemQtyField" prefWidth="60.0" promptText="Qty" />
-                                    <TextField fx:id="orderItemSeatField" prefWidth="60.0" promptText="Seat" />
                                     <Button mnemonicParsing="false" onAction="#addOrderItem" text="Add" />
                                     <Button mnemonicParsing="false" onAction="#clearOrderItems" text="Clear items" />
                                  </children>
@@ -438,7 +438,6 @@
                                     <TableColumn fx:id="orderItemTitleColumn" prefWidth="180.0" text="Item" />
                                     <TableColumn fx:id="orderItemUnitPriceColumn" prefWidth="90.0" text="Price" />
                                     <TableColumn fx:id="orderItemQtyColumn" prefWidth="60.0" text="Qty" />
-                                    <TableColumn fx:id="orderItemSeatColumn" prefWidth="60.0" text="Seat" />
                                     <TableColumn fx:id="orderItemLineTotalColumn" prefWidth="90.0" text="Total" />
                                  </columns>
                               </TableView>
