@@ -590,13 +590,22 @@ public class ManagementRepository {
                 INSERT INTO reservations (customer_id, table_id, reservation_time, people_count, status, notes, check_in_time, branch_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            fillReservationStatement(statement, reservation, currentUser.getBranchId());
-            statement.executeUpdate();
-            reservation.setReservationId(generatedId(statement, "Reservation ID generatsiya bo'lmadi"));
-            reservation.setBranchId(currentUser.getBranchId());
-            return reservation;
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                fillReservationStatement(statement, reservation, currentUser.getBranchId());
+                statement.executeUpdate();
+                reservation.setReservationId(generatedId(statement, "Reservation ID generatsiya bo'lmadi"));
+                reservation.setBranchId(currentUser.getBranchId());
+                refreshTableStatus(connection, reservation.getTableId());
+                connection.commit();
+                return reservation;
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Reservation qo'shishda xatolik yuz berdi", e);
         }
@@ -608,19 +617,46 @@ public class ManagementRepository {
                 SET customer_id = ?, table_id = ?, reservation_time = ?, people_count = ?, status = ?, notes = ?, check_in_time = ?, branch_id = ?
                 WHERE id = ?
                 """;
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            fillReservationStatement(statement, reservation, currentUser.getBranchId());
-            statement.setInt(9, reservation.getReservationId());
-            statement.executeUpdate();
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            Integer previousTableId = findReservationTableId(connection, reservation.getReservationId());
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                fillReservationStatement(statement, reservation, currentUser.getBranchId());
+                statement.setInt(9, reservation.getReservationId());
+                statement.executeUpdate();
+                refreshTableStatus(connection, previousTableId);
+                refreshTableStatus(connection, reservation.getTableId());
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Reservation yangilashda xatolik yuz berdi", e);
         }
     }
 
     public void deleteReservation(int id) {
-        deleteById("DELETE FROM reservations WHERE id = ?",
-                id, "Reservation o'chirishda xatolik yuz berdi");
+        String sql = "DELETE FROM reservations WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            Integer previousTableId = findReservationTableId(connection, id);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, id);
+                statement.executeUpdate();
+                refreshTableStatus(connection, previousTableId);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Reservation o'chirishda xatolik yuz berdi", e);
+        }
     }
 
     public List<Order> findOrders() {
@@ -673,6 +709,7 @@ public class ManagementRepository {
 
                 int orderId = generatedId(statement, "Order ID generatsiya bo'lmadi");
                 insertOrderItems(connection, orderId, order.getItems());
+                refreshTableStatus(connection, order.getTableId());
                 connection.commit();
 
                 Order createdOrder = new Order(orderId, currentUser.getBranchId(), order.getCustomerId(), order.getWaiterId(),
@@ -698,6 +735,7 @@ public class ManagementRepository {
                 """;
         try (Connection connection = DBConnection.getConnection()) {
             connection.setAutoCommit(false);
+            Integer previousTableId = findOrderTableId(connection, order.getOrderID());
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 double totalAmount = calculateOrderTotal(order);
                 order.setTotalAmount(totalAmount);
@@ -707,6 +745,8 @@ public class ManagementRepository {
                 statement.executeUpdate();
                 deleteOrderItems(connection, order.getOrderID());
                 insertOrderItems(connection, order.getOrderID(), order.getItems());
+                refreshTableStatus(connection, previousTableId);
+                refreshTableStatus(connection, order.getTableId());
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
@@ -720,8 +760,24 @@ public class ManagementRepository {
     }
 
     public void deleteOrder(int id) {
-        deleteById("DELETE FROM orders WHERE id = ?",
-                id, "Order o'chirishda xatolik yuz berdi");
+        String sql = "DELETE FROM orders WHERE id = ?";
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            Integer previousTableId = findOrderTableId(connection, id);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, id);
+                statement.executeUpdate();
+                refreshTableStatus(connection, previousTableId);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Order o'chirishda xatolik yuz berdi", e);
+        }
     }
 
     public List<PaymentRecord> findPayments() {
@@ -1043,6 +1099,94 @@ public class ManagementRepository {
             statement.setTimestamp(7, Timestamp.valueOf(reservation.getCheckInTime()));
         }
         statement.setInt(8, branchId);
+    }
+
+    // Recomputes the persisted table status after reservation or order changes.
+    private void refreshTableStatus(Connection connection, Integer tableId) throws SQLException {
+        if (tableId == null) {
+            return;
+        }
+        updateTableStatus(connection, tableId, determineTableStatus(connection, tableId));
+    }
+
+    // Active orders take priority over reservations; otherwise the table becomes free.
+    private TableStatus determineTableStatus(Connection connection, int tableId) throws SQLException {
+        if (hasActiveOrder(connection, tableId)) {
+            return TableStatus.OCCUPIED;
+        }
+        if (hasActiveReservation(connection, tableId)) {
+            return TableStatus.RESERVED;
+        }
+        return TableStatus.FREE;
+    }
+
+    // Treats every non-canceled order as an occupied table.
+    private boolean hasActiveOrder(Connection connection, int tableId) throws SQLException {
+        String sql = """
+                SELECT COUNT(*)
+                FROM orders
+                WHERE branch_id = ? AND table_id = ? AND status NOT IN ('CANCELED', 'NONE')
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, currentUser.getBranchId());
+            statement.setInt(2, tableId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) > 0;
+            }
+        }
+    }
+
+    // Reservations still hold the table until they are canceled or abandoned.
+    private boolean hasActiveReservation(Connection connection, int tableId) throws SQLException {
+        String sql = """
+                SELECT COUNT(*)
+                FROM reservations
+                WHERE branch_id = ? AND table_id = ? AND status NOT IN ('canceled', 'abandoned')
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, currentUser.getBranchId());
+            statement.setInt(2, tableId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) > 0;
+            }
+        }
+    }
+
+    // Updates the actual restaurant table row with the recalculated status.
+    private void updateTableStatus(Connection connection, int tableId, TableStatus status) throws SQLException {
+        String sql = "UPDATE restaurant_tables SET status = ? WHERE id = ? AND branch_id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setInt(2, tableId);
+            statement.setInt(3, currentUser.getBranchId());
+            statement.executeUpdate();
+        }
+    }
+
+    // Reads the old reservation table before updates/deletes so the previous table can be refreshed too.
+    private Integer findReservationTableId(Connection connection, int reservationId) throws SQLException {
+        String sql = "SELECT table_id FROM reservations WHERE id = ? AND branch_id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, reservationId);
+            statement.setInt(2, currentUser.getBranchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? (Integer) resultSet.getObject("table_id") : null;
+            }
+        }
+    }
+
+    // Reads the old order table before updates/deletes so both old and new tables stay in sync.
+    private Integer findOrderTableId(Connection connection, int orderId) throws SQLException {
+        String sql = "SELECT table_id FROM orders WHERE id = ? AND branch_id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, currentUser.getBranchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? (Integer) resultSet.getObject("table_id") : null;
+            }
+        }
     }
 
     public List<Table> findAvailableTables(LocalDateTime time, int durationMinutes) {
