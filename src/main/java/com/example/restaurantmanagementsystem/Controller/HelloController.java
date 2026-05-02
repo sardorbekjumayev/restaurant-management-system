@@ -38,11 +38,11 @@ public class HelloController {
             String role = roleBox.getValue();
             User user = authService.login(loginField.getText().trim(), passwordField.getText().trim(), role);
 
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/restaurantmanagementsystem/ManagerDashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(DashboardViewResolver.resolveFxml(user.getRole())));
             Parent root = loader.load();
 
-            ManagerController managerController = loader.getController();
-            managerController.setUser(user);
+            BaseDashboardController dashboardController = loader.getController();
+            dashboardController.setUser(user);
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root, 1320, 860));
