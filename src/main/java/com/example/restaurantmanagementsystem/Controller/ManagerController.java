@@ -340,7 +340,7 @@ public class ManagerController {
     public void initialize() {
         employeeRoleBox.setItems(FXCollections.observableArrayList("Manager", "Waiter", "Receptionist", "Chef", "Cashier"));
         diningTableStatusBox.setItems(FXCollections.observableArrayList(
-                TableStatus.FREE.name(), TableStatus.RESERVED.name(), TableStatus.OCCUPIED.name(), TableStatus.OUT_OF_SERVIS.name()));
+                TableStatus.FREE.name(), TableStatus.RESERVED.name(), TableStatus.OCCUPIED.name(), TableStatus.OUT_OF_SERVICE.name()));
         reservationStatusBox.setItems(FXCollections.observableArrayList(
                 ReservationStatus.requested.name(), ReservationStatus.pending.name(), ReservationStatus.confirmed.name(),
                 ReservationStatus.checkedIn.name(), ReservationStatus.canceled.name(), ReservationStatus.abandoned.name()));
