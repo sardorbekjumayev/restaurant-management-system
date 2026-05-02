@@ -10,6 +10,7 @@ import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Customer;
 import com.example.restaurantmanagementsystem.Model.Users.Employee;
 import com.example.restaurantmanagementsystem.Model.Users.Reservation;
+import com.example.restaurantmanagementsystem.Enums.ReservationStatus;
 import com.example.restaurantmanagementsystem.repository.ManagementRepository;
 
 import java.time.LocalDateTime;
@@ -162,6 +163,34 @@ public class ManagementService {
 
     public void deletePayment(PaymentRecord payment) {
         repository.deletePayment(payment.getId());
+    }
+
+    public List<Table> getAvailableTables(LocalDateTime time, int durationMinutes) {
+        return repository.findAvailableTables(time, durationMinutes);
+    }
+
+    public List<Table> getAssignedTablesForCustomer(int customerId) {
+        return repository.findAssignedTablesForCustomer(customerId);
+    }
+
+    public void checkUpcomingReservationsAndNotify() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold = now.plusMinutes(30);
+        List<Reservation> reservations = getReservations();
+        for (Reservation res : reservations) {
+            if (res.getStatus() == ReservationStatus.confirmed && 
+                res.getTimeOfReservation().isAfter(now) && 
+                res.getTimeOfReservation().isBefore(threshold)) {
+                sendNotification(res.getCustomer().getCustomerId(), 
+                    "Sizning band qilgan vaqtingiz yaqinlashmoqda: " + res.getTimeOfReservation(), 
+                    "RESERVATION_REMINDER");
+            }
+        }
+    }
+
+    public void sendNotification(int userId, String message, String type) {
+        // Logic to insert into notifications table via repository (to be implemented)
+        System.out.println("Notification sent to " + userId + ": " + message);
     }
 
     private void validateText(String value, String fieldName) {

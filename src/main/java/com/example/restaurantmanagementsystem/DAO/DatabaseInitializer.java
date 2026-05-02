@@ -178,6 +178,7 @@ public final class DatabaseInitializer {
                         order_id INT NOT NULL,
                         menu_item_id INT NOT NULL,
                         quantity INT NOT NULL,
+                        seat_number INT DEFAULT 1,
                         CONSTRAINT fk_order_item_order
                             FOREIGN KEY (order_id) REFERENCES orders(id)
                             ON DELETE CASCADE,
@@ -200,10 +201,25 @@ public final class DatabaseInitializer {
                             ON DELETE CASCADE
                     )
                     """);
+            
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        user_id INT NOT NULL,
+                        message TEXT NOT NULL,
+                        type VARCHAR(50),
+                        created_at DATETIME NOT NULL,
+                        is_read BOOLEAN DEFAULT FALSE,
+                        CONSTRAINT fk_notification_user
+                            FOREIGN KEY (user_id) REFERENCES accounts(id)
+                            ON DELETE CASCADE
+                    )
+                    """);
 
             addColumnIfMissing(connection, "customers", "branch_id", "ALTER TABLE customers ADD COLUMN branch_id INT NULL");
             addColumnIfMissing(connection, "reservations", "branch_id", "ALTER TABLE reservations ADD COLUMN branch_id INT NULL");
             addColumnIfMissing(connection, "orders", "branch_id", "ALTER TABLE orders ADD COLUMN branch_id INT NULL");
+            addColumnIfMissing(connection, "order_items", "seat_number", "ALTER TABLE order_items ADD COLUMN seat_number INT DEFAULT 1");
 
             seedDefaultData(connection);
         } catch (SQLException e) {
