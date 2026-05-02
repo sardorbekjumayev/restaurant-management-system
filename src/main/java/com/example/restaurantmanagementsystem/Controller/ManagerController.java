@@ -69,6 +69,9 @@ public class ManagerController {
 
     private final ObservableList<OrderItemRow> orderItemRows = FXCollections.observableArrayList();
     private final Map<Integer, MenuSection> menuSectionById = new HashMap<>();
+    private final Map<Integer, Customer> customerById = new HashMap<>();
+    private final Map<Integer, Employee> employeeById = new HashMap<>();
+    private final Map<Integer, PaymentStatus> paymentStatusByOrderId = new HashMap<>();
 
     public static final class OrderItemRow {
         private final MenuItem menuItem;
@@ -260,13 +263,15 @@ public class ManagerController {
     @FXML
     private TableView<Order> orderTable;
     @FXML
-    private TableColumn<Order, Number> orderCustomerIdColumn;
+    private TableColumn<Order, String> orderCustomerIdColumn;
     @FXML
-    private TableColumn<Order, Number> orderWaiterIdColumn;
+    private TableColumn<Order, String> orderWaiterIdColumn;
     @FXML
     private TableColumn<Order, String> orderStatusColumn;
     @FXML
     private TableColumn<Order, Number> orderTotalColumn;
+    @FXML
+    private TableColumn<Order, String> orderPaymentStatusColumn;
     @FXML
     private ChoiceBox<Customer> orderCustomerBox;
     @FXML
@@ -297,6 +302,16 @@ public class ManagerController {
     private TextField orderCreatedAtField;
     @FXML
     private TextField orderTotalField;
+    @FXML
+    private Button orderAddItemButton;
+    @FXML
+    private Button orderClearItemsButton;
+    @FXML
+    private Button orderSaveButton;
+    @FXML
+    private Button orderDeleteButton;
+    @FXML
+    private Button orderNewButton;
 
     @FXML
     private TableView<PaymentRecord> paymentTable;
@@ -377,10 +392,11 @@ public class ManagerController {
         reservationTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(formatDateTime(data.getValue().getTimeOfReservation())));
         reservationStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
 
-        orderCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getCustomerId()));
-        orderWaiterIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getWaiterId()));
+        orderCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(resolveCustomerName(data.getValue().getCustomerId())));
+        orderWaiterIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(resolveEmployeeName(data.getValue().getWaiterId())));
         orderStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
         orderTotalColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getTotalAmount()));
+        orderPaymentStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(resolvePaymentStatus(data.getValue().getOrderID())));
 
         paymentOrderIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getOrderId()));
         paymentMethodColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getMethod().name()));
@@ -625,10 +641,23 @@ public class ManagerController {
             List<Customer> customers = managementService.getCustomers();
             List<Employee> employees = managementService.getEmployees();
             List<Order> orders = managementService.getOrders();
+            List<PaymentRecord> payments = managementService.getPayments();
 
             menuSectionById.clear();
             for (MenuSection section : menuSections) {
                 menuSectionById.put(section.getMenuSectionID(), section);
+            }
+            customerById.clear();
+            for (Customer customer : customers) {
+                customerById.put(customer.getCustomerId(), customer);
+            }
+            employeeById.clear();
+            for (Employee employee : employees) {
+                employeeById.put(employee.getEmployeeID(), employee);
+            }
+            paymentStatusByOrderId.clear();
+            for (PaymentRecord payment : payments) {
+                paymentStatusByOrderId.put(payment.getOrderId(), payment.getStatus());
             }
 
             employeeTable.setItems(FXCollections.observableArrayList(employees));
@@ -641,7 +670,7 @@ public class ManagerController {
             diningTableTable.setItems(FXCollections.observableArrayList(tables));
             reservationTable.setItems(FXCollections.observableArrayList(managementService.getReservations()));
             orderTable.setItems(FXCollections.observableArrayList(orders));
-            paymentTable.setItems(FXCollections.observableArrayList(managementService.getPayments()));
+            paymentTable.setItems(FXCollections.observableArrayList(payments));
 
             orderTableBox.setItems(FXCollections.observableArrayList(tables));
             orderCustomerBox.setItems(FXCollections.observableArrayList(customers));
@@ -728,9 +757,29 @@ public class ManagerController {
             case "Receptionist" -> mainTabPane.getTabs().addAll(customerTabPane, tablesTab, reservationsTab);
             case "Waiter" -> mainTabPane.getTabs().addAll(customerTabPane, ordersTab);
             case "Chef" -> mainTabPane.getTabs().add(ordersTab);
-            case "Cashier" -> mainTabPane.getTabs().addAll(ordersTab, paymentsTab);
+            case "Cashier" -> mainTabPane.getTabs().add(paymentsTab);
             default -> mainTabPane.getTabs().addAll(customerTabPane, reservationsTab);
         }
+        configureRoleSpecificControls();
+    }
+
+    private void configureRoleSpecificControls() {
+        boolean isChef = "Chef".equalsIgnoreCase(currentUser.getRole());
+        boolean isReceptionist = "Receptionist".equalsIgnoreCase(currentUser.getRole());
+
+        orderCustomerBox.setDisable(isChef);
+        orderWaiterBox.setDisable(isChef);
+        orderTableBox.setDisable(isChef);
+        orderCreatedAtField.setDisable(isChef);
+        orderMenuItemBox.setDisable(isChef);
+        orderItemQtyField.setDisable(isChef);
+        orderAddItemButton.setDisable(isChef);
+        orderClearItemsButton.setDisable(isChef);
+        orderDeleteButton.setDisable(isChef);
+        orderNewButton.setDisable(isChef);
+        orderItemTable.setDisable(isChef);
+
+        reservationCheckInField.setDisable(isReceptionist);
     }
 
 
@@ -1003,8 +1052,11 @@ public class ManagerController {
                     customer,
                     table.getTableId()
             );
-            reservation.setStatus(ReservationStatus.valueOf(reservationStatusBox.getValue()));
-            if (!reservationCheckInField.getText().isBlank()) {
+            ReservationStatus reservationStatus = ReservationStatus.valueOf(reservationStatusBox.getValue());
+            reservation.setStatus(reservationStatus);
+            if (reservationStatus == ReservationStatus.checkedIn) {
+                reservation.setCheckInTime(LocalDateTime.now());
+            } else if (!reservationCheckInField.getText().isBlank()) {
                 reservation.setCheckInTime(parseDateTime(reservationCheckInField.getText()));
             }
 
@@ -1383,6 +1435,27 @@ public class ManagerController {
     private String resolveMenuSectionName(int sectionId) {
         MenuSection section = menuSectionById.get(sectionId);
         return section == null ? String.valueOf(sectionId) : section.getTitle();
+    }
+
+    private String resolveCustomerName(Integer customerId) {
+        if (customerId == null) {
+            return "-";
+        }
+        Customer customer = customerById.get(customerId);
+        return customer == null ? String.valueOf(customerId) : customer.getFullName();
+    }
+
+    private String resolveEmployeeName(Integer employeeId) {
+        if (employeeId == null) {
+            return "-";
+        }
+        Employee employee = employeeById.get(employeeId);
+        return employee == null ? String.valueOf(employeeId) : employee.getFullName();
+    }
+
+    private String resolvePaymentStatus(int orderId) {
+        PaymentStatus status = paymentStatusByOrderId.get(orderId);
+        return status == null ? "UNPAID" : status.name();
     }
 
     private double calculateSelectedOrderTotal() {

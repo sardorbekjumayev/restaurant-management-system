@@ -501,13 +501,22 @@ public class ManagementRepository {
                 INSERT INTO reservations (customer_id, table_id, reservation_time, people_count, status, notes, check_in_time, branch_id)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            fillReservationStatement(statement, reservation);
-            statement.executeUpdate();
-            reservation.setReservationId(generatedId(statement, "Reservation ID generatsiya bo'lmadi"));
-            reservation.setBranchId(branchId());
-            return reservation;
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                fillReservationStatement(statement, reservation);
+                statement.executeUpdate();
+                reservation.setReservationId(generatedId(statement, "Reservation ID generatsiya bo'lmadi"));
+                reservation.setBranchId(branchId());
+                syncReservationTableStatus(connection, reservation.getTableId());
+                connection.commit();
+                return reservation;
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Reservation qo'shishda xatolik yuz berdi", e);
         }
@@ -519,19 +528,45 @@ public class ManagementRepository {
                 SET customer_id = ?, table_id = ?, reservation_time = ?, people_count = ?, status = ?, notes = ?, check_in_time = ?, branch_id = ?
                 WHERE id = ?
                 """;
-        try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            fillReservationStatement(statement, reservation);
-            statement.setInt(9, reservation.getReservationId());
-            statement.executeUpdate();
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            Integer oldTableId = findReservationTableId(connection, reservation.getReservationId());
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                fillReservationStatement(statement, reservation);
+                statement.setInt(9, reservation.getReservationId());
+                statement.executeUpdate();
+                syncReservationTableStatus(connection, oldTableId);
+                syncReservationTableStatus(connection, reservation.getTableId());
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Reservation yangilashda xatolik yuz berdi", e);
         }
     }
 
     public void deleteReservation(int id) {
-        deleteById("DELETE FROM reservations WHERE id = ?",
-                id, "Reservation o'chirishda xatolik yuz berdi");
+        try (Connection connection = DBConnection.getConnection()) {
+            connection.setAutoCommit(false);
+            Integer tableId = findReservationTableId(connection, id);
+            try (PreparedStatement statement = connection.prepareStatement("DELETE FROM reservations WHERE id = ?")) {
+                statement.setInt(1, id);
+                statement.executeUpdate();
+                syncReservationTableStatus(connection, tableId);
+                connection.commit();
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Reservation o'chirishda xatolik yuz berdi", e);
+        }
     }
 
     public List<Order> findOrders() {
@@ -877,6 +912,66 @@ public class ManagementRepository {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Manager validatsiyasida xatolik yuz berdi", e);
+        }
+    }
+
+    private Integer findReservationTableId(Connection connection, int reservationId) throws SQLException {
+        String sql = "SELECT table_id FROM reservations WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, reservationId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return (Integer) resultSet.getObject("table_id");
+                }
+                return null;
+            }
+        }
+    }
+
+    private void syncReservationTableStatus(Connection connection, Integer tableId) throws SQLException {
+        if (tableId == null) {
+            return;
+        }
+
+        TableStatus targetStatus = TableStatus.FREE;
+        String statusSql = """
+                SELECT status
+                FROM reservations
+                WHERE table_id = ?
+                  AND branch_id = ?
+                  AND status NOT IN ('canceled', 'abandoned')
+                ORDER BY
+                  CASE
+                    WHEN status = 'checkedIn' THEN 0
+                    WHEN status = 'confirmed' THEN 1
+                    WHEN status = 'pending' THEN 2
+                    WHEN status = 'requested' THEN 3
+                    ELSE 4
+                  END,
+                  reservation_time DESC
+                LIMIT 1
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(statusSql)) {
+            statement.setInt(1, tableId);
+            statement.setInt(2, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    ReservationStatus reservationStatus = ReservationStatus.valueOf(resultSet.getString("status"));
+                    if (reservationStatus == ReservationStatus.checkedIn) {
+                        targetStatus = TableStatus.OCCUPIED;
+                    } else {
+                        targetStatus = TableStatus.RESERVED;
+                    }
+                }
+            }
+        }
+
+        try (PreparedStatement updateStatement = connection.prepareStatement(
+                "UPDATE restaurant_tables SET status = ? WHERE id = ? AND branch_id = ?")) {
+            updateStatement.setString(1, targetStatus.name());
+            updateStatement.setInt(2, tableId);
+            updateStatement.setInt(3, branchId());
+            updateStatement.executeUpdate();
         }
     }
 
