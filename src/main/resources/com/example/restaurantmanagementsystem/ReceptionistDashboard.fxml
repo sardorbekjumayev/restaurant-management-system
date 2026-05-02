@@ -1,0 +1,268 @@
+   <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane prefHeight="860.0" prefWidth="1320.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.restaurantmanagementsystem.Controller.ReceptionistDashboardController">
+   <top>
+      <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="18.0" style="-fx-background-color: #0f766e;" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets bottom="12.0" left="18.0" right="18.0" top="12.0" />
+         </padding>
+         <children>
+            <Label fx:id="welcomeLabel" text="Dashboard">
+               <font>
+                  <Font size="22.0" />
+               </font>
+               <style>-fx-text-fill: white;</style>
+            </Label>
+            <HBox alignment="CENTER_RIGHT" prefWidth="820.0" />
+            <Button fx:id="logOutButton" mnemonicParsing="false" onAction="#logOut" style="-fx-background-color: white; -fx-text-fill: #0f766e; -fx-background-radius: 10;" text="Log out" />
+         </children>
+      </HBox>
+   </top>
+   <center>
+      <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" BorderPane.alignment="CENTER">
+         <tabs>
+            <Tab fx:id="overviewTab" text="Overview">
+               <content>
+                  <VBox spacing="18.0" style="-fx-background-color: #f5f5f4;">
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                     <children>
+                        <Label text="Asosiy ko'rsatkichlar">
+                           <font>
+                              <Font size="24.0" />
+                           </font>
+                        </Label>
+                        <HBox spacing="16.0">
+                           <children>
+                              <VBox fx:id="employeeOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="employeeOverviewTitleLabel" text="Employees" />
+                                    <Label fx:id="employeeCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="customerOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="customerOverviewTitleLabel" text="Customers" />
+                                    <Label fx:id="customerCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="menuOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="menuOverviewTitleLabel" text="Menu Items" />
+                                    <Label fx:id="menuCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="reservationOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="reservationOverviewTitleLabel" text="Reservations" />
+                                    <Label fx:id="reservationCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                              <VBox fx:id="activeOrderOverviewCard" prefWidth="180.0" spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                                 <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                                 <children>
+                                    <Label fx:id="activeOrderOverviewTitleLabel" text="Active Orders" />
+                                    <Label fx:id="activeOrderCountLabel" text="0"><font><Font size="28.0" /></font></Label>
+                                 </children>
+                              </VBox>
+                           </children>
+                        </HBox>
+                        <VBox spacing="8.0" style="-fx-background-color: white; -fx-background-radius: 14;">
+                           <padding><Insets bottom="18.0" left="18.0" right="18.0" top="18.0" /></padding>
+                           <children>
+                              <Label text="Demo loginlar" />
+                              <Label text="manager / pass" />
+                              <Label text="waiter / 123" />
+                              <Label text="chef / chef123" />
+                              <Label text="reception / recep123" />
+                           </children>
+                        </VBox>
+                     </children>
+                  </VBox>
+               </content>
+            </Tab>
+            <Tab fx:id="customerTabPane" text="Customers">
+               <content>
+                  <SplitPane dividerPositions="0.62">
+                     <items>
+                        <TableView fx:id="customerTable">
+                           <columns>
+                              <TableColumn fx:id="customerNameColumn" prefWidth="220.0" text="Name" />
+                              <TableColumn fx:id="customerEmailColumn" prefWidth="220.0" text="Email" />
+                              <TableColumn fx:id="customerPhoneColumn" prefWidth="180.0" text="Phone" />
+                           </columns>
+                        </TableView>
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                           <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
+                           <children>
+                              <Label text="Customer Form" />
+                              <GridPane hgap="10.0" vgap="10.0">
+                                 <children>
+                                    <Label text="Name" GridPane.rowIndex="0" />
+                                    <TextField fx:id="customerNameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Email" GridPane.rowIndex="1" />
+                                    <TextField fx:id="customerEmailField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="Phone" GridPane.rowIndex="2" />
+                                    <TextField fx:id="customerPhoneField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                 </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
+                              </GridPane>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#saveCustomer" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
+                                    <Button mnemonicParsing="false" onAction="#deleteCustomer" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearCustomerForm" text="New" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </content>
+            </Tab>
+            <Tab fx:id="tablesTab" text="Tables">
+               <content>
+                  <SplitPane dividerPositions="0.62">
+                     <items>
+                        <TableView fx:id="diningTableTable">
+                           <columns>
+                              <TableColumn fx:id="diningTableNumberColumn" prefWidth="180.0" text="Table No" />
+                              <TableColumn fx:id="diningTableStatusColumn" prefWidth="180.0" text="Status" />
+                              <TableColumn fx:id="diningTableCapacityColumn" prefWidth="120.0" text="Capacity" />
+                           </columns>
+                        </TableView>
+                        <VBox fx:id="diningTableForm" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                           <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
+                           <children>
+                              <Label text="Dining Table Form" />
+                              <GridPane hgap="10.0" vgap="10.0">
+                                 <children>
+                                    <Label text="Table No" GridPane.rowIndex="0" />
+                                    <TextField fx:id="diningTableNumberField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Status" GridPane.rowIndex="1" />
+                                    <ChoiceBox fx:id="diningTableStatusBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="Capacity" GridPane.rowIndex="2" />
+                                    <TextField fx:id="diningTableCapacityField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label text="Location ID" GridPane.rowIndex="3" />
+                                    <TextField fx:id="diningTableLocationField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                 </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
+                              </GridPane>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#saveDiningTable" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
+                                    <Button mnemonicParsing="false" onAction="#deleteDiningTable" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearDiningTableForm" text="New" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </content>
+            </Tab>
+            <Tab fx:id="reservationsTab" text="Reservations">
+               <content>
+                  <SplitPane dividerPositions="0.62">
+                     <items>
+                        <TableView fx:id="reservationTable">
+                           <columns>
+                              <TableColumn fx:id="reservationCustomerIdColumn" prefWidth="120.0" text="Customer" />
+                              <TableColumn fx:id="reservationTableIdColumn" prefWidth="100.0" text="Table" />
+                              <TableColumn fx:id="reservationTimeColumn" prefWidth="180.0" text="Time" />
+                              <TableColumn fx:id="reservationStatusColumn" prefWidth="140.0" text="Status" />
+                           </columns>
+                        </TableView>
+                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                           <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
+                           <children>
+                              <Label text="Table Search (Available Tables)" />
+                              <HBox spacing="8.0">
+                                 <children>
+                                    <DatePicker fx:id="searchDatePicker" prefWidth="120.0" />
+                                    <TextField fx:id="searchTimeField" prefWidth="70.0" promptText="HH:mm" />
+                                    <Button onAction="#searchAvailableTables" text="Search" />
+                                 </children>
+                              </HBox>
+                              <Separator />
+                              <Label text="Reservation Form" />
+                              <GridPane hgap="10.0" vgap="10.0">
+                                 <children>
+                                    <Label text="Customer" GridPane.rowIndex="0" />
+                                    <ChoiceBox fx:id="reservationCustomerBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                                    <Label text="Table" GridPane.rowIndex="1" />
+                                    <ChoiceBox fx:id="reservationTableBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                    <Label text="Time" GridPane.rowIndex="2" />
+                                    <TextField fx:id="reservationTimeField" promptText="yyyy-MM-dd HH:mm" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                    <Label text="People" GridPane.rowIndex="3" />
+                                    <TextField fx:id="reservationPeopleCountField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                    <Label text="Status" GridPane.rowIndex="4" />
+                                    <ChoiceBox fx:id="reservationStatusBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                                    <Label text="Check-in" GridPane.rowIndex="5" />
+                                    <TextField fx:id="reservationCheckInField" promptText="yyyy-MM-dd HH:mm" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                    <Label text="Notes" GridPane.rowIndex="6" />
+                                    <TextArea fx:id="reservationNotesField" prefHeight="90.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                                 </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
+                              </GridPane>
+                              <HBox spacing="10.0">
+                                 <children>
+                                    <Button mnemonicParsing="false" onAction="#saveReservation" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
+                                    <Button mnemonicParsing="false" onAction="#deleteReservation" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearReservationForm" text="New" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </items>
+                  </SplitPane>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+   </center>
+   <bottom>
+      <Label fx:id="statusLabel" prefHeight="36.0" style="-fx-background-color: #e7e5e4; -fx-padding: 0 16 0 16;" text="Tayyor" BorderPane.alignment="CENTER" />
+   </bottom>
+</BorderPane>
+
