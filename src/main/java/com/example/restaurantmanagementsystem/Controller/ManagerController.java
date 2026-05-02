@@ -568,6 +568,9 @@ public class ManagerController {
                 return null;
             }
         });
+
+        reservationTimeField.textProperty().addListener((obs, oldValue, newValue) -> refreshAvailableReservationTables());
+        reservationPeopleCountField.textProperty().addListener((obs, oldValue, newValue) -> refreshAvailableReservationTables());
     }
 
     private void configurePaymentFormControls() {
@@ -650,7 +653,7 @@ public class ManagerController {
             orderMenuItemBox.setItems(FXCollections.observableArrayList(menuItems.stream().filter(MenuItem::isAvailable).toList()));
 
             reservationCustomerBox.setItems(FXCollections.observableArrayList(customers));
-            reservationTableBox.setItems(FXCollections.observableArrayList(tables));
+            refreshAvailableReservationTables();
 
             paymentOrderBox.setItems(FXCollections.observableArrayList(orders));
         } catch (Exception e) {
@@ -674,6 +677,47 @@ public class ManagerController {
         paymentStatusBox.setValue(PaymentStatus.PENDING.name());
         paymentCreatedAtField.setText(formatDateTime(LocalDateTime.now()));
         paymentOrderBox.setValue(null);
+    }
+
+    private void refreshAvailableReservationTables() {
+        if (managementService == null) {
+            return;
+        }
+
+        LocalDateTime reservationTime;
+        try {
+            reservationTime = parseDateTime(reservationTimeField.getText());
+        } catch (Exception e) {
+            return;
+        }
+
+        int peopleCount;
+        try {
+            peopleCount = parseOptionalPositiveInt(reservationPeopleCountField.getText(), 1);
+        } catch (Exception e) {
+            return;
+        }
+
+        try {
+            Reservation selectedReservation = reservationTable.getSelectionModel().getSelectedItem();
+            Integer excludeReservationId = selectedReservation == null ? null : selectedReservation.getReservationId();
+            Table currentSelection = reservationTableBox.getValue();
+            List<Table> availableTables = managementService.getAvailableTables(reservationTime, peopleCount, excludeReservationId);
+            reservationTableBox.setItems(FXCollections.observableArrayList(availableTables));
+            if (currentSelection != null) {
+                Table matched = availableTables.stream()
+                        .filter(table -> table.getTableId() == currentSelection.getTableId())
+                        .findFirst()
+                        .orElse(null);
+                reservationTableBox.setValue(matched);
+            } else if (!availableTables.isEmpty()) {
+                reservationTableBox.setValue(availableTables.getFirst());
+            } else {
+                reservationTableBox.setValue(null);
+            }
+        } catch (Exception e) {
+            setStatus(e.getMessage(), true);
+        }
     }
 
 
@@ -945,16 +989,19 @@ public class ManagerController {
         try {
             Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
             Customer customer = requireSelection(reservationCustomerBox.getValue(), "Customer");
-            Table table = reservationTableBox.getValue();
-            Integer tableId = table == null ? null : table.getTableId();
+            Table table = requireSelection(reservationTableBox.getValue(), "Available table");
+            int peopleCount = parseInt(reservationPeopleCountField.getText(), "People count");
+            if (peopleCount <= 0) {
+                throw new IllegalArgumentException("People count 0 dan katta bo'lishi kerak");
+            }
 
             Reservation reservation = new Reservation(
                     selected == null ? 0 : selected.getReservationId(),
                     parseDateTime(reservationTimeField.getText()),
-                    parseInt(reservationPeopleCountField.getText(), "People count"),
+                    peopleCount,
                     reservationNotesField.getText().trim(),
                     customer,
-                    tableId
+                    table.getTableId()
             );
             reservation.setStatus(ReservationStatus.valueOf(reservationStatusBox.getValue()));
             if (!reservationCheckInField.getText().isBlank()) {
@@ -1247,6 +1294,10 @@ public class ManagerController {
                 .orElse(null);
         reservationCustomerBox.setValue(customer);
 
+        reservationTimeField.setText(formatDateTime(reservation.getTimeOfReservation()));
+        reservationPeopleCountField.setText(String.valueOf(reservation.getPeopleCount()));
+        refreshAvailableReservationTables();
+
         Table table = null;
         if (reservation.getTableId() != null) {
             table = reservationTableBox.getItems()
@@ -1257,8 +1308,6 @@ public class ManagerController {
         }
         reservationTableBox.setValue(table);
 
-        reservationTimeField.setText(formatDateTime(reservation.getTimeOfReservation()));
-        reservationPeopleCountField.setText(String.valueOf(reservation.getPeopleCount()));
         reservationStatusBox.setValue(reservation.getStatus().name());
         reservationNotesField.setText(safe(reservation.getNotes()));
         reservationCheckInField.setText(reservation.getCheckInTime() == null ? "" : formatDateTime(reservation.getCheckInTime()));
@@ -1354,6 +1403,17 @@ public class ManagerController {
         } catch (Exception e) {
             throw new IllegalArgumentException(fieldName + " raqam bo'lishi kerak");
         }
+    }
+
+    private int parseOptionalPositiveInt(String value, int defaultValue) {
+        if (isBlank(value)) {
+            return defaultValue;
+        }
+        int parsed = parseInt(value, "People count");
+        if (parsed <= 0) {
+            throw new IllegalArgumentException("People count 0 dan katta bo'lishi kerak");
+        }
+        return parsed;
     }
 
     private double parseDouble(String value, String fieldName) {

@@ -12,6 +12,7 @@ import com.example.restaurantmanagementsystem.Model.Users.Employee;
 import com.example.restaurantmanagementsystem.Model.Users.Reservation;
 import com.example.restaurantmanagementsystem.repository.ManagementRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ManagementService {
@@ -89,6 +90,16 @@ public class ManagementService {
 
     public List<Table> getTables() {
         return repository.findTables();
+    }
+
+    public List<Table> getAvailableTables(LocalDateTime reservationTime, int peopleCount, Integer excludeReservationId) {
+        if (reservationTime == null) {
+            throw new IllegalArgumentException("Reservation time bo'sh bo'lmasligi kerak");
+        }
+        if (peopleCount <= 0) {
+            throw new IllegalArgumentException("People count 0 dan katta bo'lishi kerak");
+        }
+        return repository.findAvailableTables(reservationTime, peopleCount, excludeReservationId);
     }
 
     public Table createTable(Table table) {

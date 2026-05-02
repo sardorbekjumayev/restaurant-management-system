@@ -44,7 +44,7 @@ public class ManagementRepository {
         return new DashboardStats(
                 count("employees"),
                 count("customers"),
-                count("menu_items"),
+                countMenuItems(),
                 count("reservations"),
                 count("orders WHERE status <> 'COMPLETE'")
         );
@@ -56,14 +56,17 @@ public class ManagementRepository {
                        a.id AS account_id, a.username, a.password_hash, a.status
                 FROM employees e
                 JOIN accounts a ON a.id = e.account_id
+                WHERE e.branch_id = ?
                 ORDER BY e.id
                 """;
         List<Employee> employees = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                employees.add(mapEmployee(resultSet));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    employees.add(mapEmployee(resultSet));
+                }
             }
             return employees;
         } catch (SQLException e) {
@@ -81,7 +84,7 @@ public class ManagementRepository {
                 """;
         String insertEmployee = """
                 INSERT INTO employees (full_name, email, phone, role, date_joined, account_id, branch_id)
-                VALUES (?, ?, ?, ?, ?, ?, 1)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
         try (Connection connection = DBConnection.getConnection()) {
@@ -101,12 +104,13 @@ public class ManagementRepository {
                     employeeStatement.setString(4, role);
                     employeeStatement.setString(5, employee.getDateJoined());
                     employeeStatement.setInt(6, accountId);
+                    employeeStatement.setInt(7, branchId());
                     employeeStatement.executeUpdate();
                     employee.setEmployeeID(generatedId(employeeStatement, "Employee ID generatsiya bo'lmadi"));
                 }
 
                 employee.setRole(role);
-                employee.setBranchId(1);
+                employee.setBranchId(branchId());
                 employee.setAccount(new Account(accountId, username, PasswordUtil.hash(password), AccountStatus.ACTIVE, role));
                 connection.commit();
                 return employee;
@@ -130,7 +134,7 @@ public class ManagementRepository {
                 : "UPDATE accounts SET username = ?, password_hash = ?, role = ? WHERE id = ?";
         String updateEmployee = """
                 UPDATE employees
-                SET full_name = ?, email = ?, phone = ?, role = ?, date_joined = ?
+                SET full_name = ?, email = ?, phone = ?, role = ?, date_joined = ?, branch_id = ?
                 WHERE id = ?
                 """;
 
@@ -152,7 +156,8 @@ public class ManagementRepository {
                 employeeStatement.setString(3, employee.getPhone());
                 employeeStatement.setString(4, role);
                 employeeStatement.setString(5, employee.getDateJoined());
-                employeeStatement.setInt(6, employee.getEmployeeID());
+                employeeStatement.setInt(6, branchId());
+                employeeStatement.setInt(7, employee.getEmployeeID());
                 employeeStatement.executeUpdate();
 
                 connection.commit();
@@ -179,13 +184,15 @@ public class ManagementRepository {
     }
 
     public List<Customer> findCustomers() {
-        String sql = "SELECT * FROM customers ORDER BY id";
+        String sql = "SELECT * FROM customers WHERE branch_id = ? ORDER BY id";
         List<Customer> customers = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                customers.add(mapCustomer(resultSet));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    customers.add(mapCustomer(resultSet));
+                }
             }
             return customers;
         } catch (SQLException e) {
@@ -194,15 +201,16 @@ public class ManagementRepository {
     }
 
     public Customer createCustomer(Customer customer) {
-        String sql = "INSERT INTO customers (full_name, email, phone, branch_id) VALUES (?, ?, ?, 1)";
+        String sql = "INSERT INTO customers (full_name, email, phone, branch_id) VALUES (?, ?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, customer.getFullName());
             statement.setString(2, customer.getEmail());
             statement.setString(3, customer.getPhone());
+            statement.setInt(4, branchId());
             statement.executeUpdate();
             customer.setCustomerId(generatedId(statement, "Customer ID generatsiya bo'lmadi"));
-            customer.setBranchId(1);
+            customer.setBranchId(branchId());
             return customer;
         } catch (SQLException e) {
             throw new IllegalStateException("Customer qo'shishda xatolik yuz berdi", e);
@@ -211,7 +219,7 @@ public class ManagementRepository {
 
     public void updateCustomer(Customer customer) {
         String sql = """
-                UPDATE customers SET full_name = ?, email = ?, phone = ?
+                UPDATE customers SET full_name = ?, email = ?, phone = ?, branch_id = ?
                 WHERE id = ?
                 """;
         try (Connection connection = DBConnection.getConnection();
@@ -219,7 +227,8 @@ public class ManagementRepository {
             statement.setString(1, customer.getFullName());
             statement.setString(2, customer.getEmail());
             statement.setString(3, customer.getPhone());
-            statement.setInt(4, customer.getCustomerId());
+            statement.setInt(4, branchId());
+            statement.setInt(5, customer.getCustomerId());
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Customer yangilashda xatolik yuz berdi", e);
@@ -232,21 +241,30 @@ public class ManagementRepository {
     }
 
     public List<MenuItem> findMenuItems() {
-        String sql = "SELECT * FROM menu_items ORDER BY id";
+        String sql = """
+                SELECT mi.*
+                FROM menu_items mi
+                JOIN menu_sections ms ON ms.id = mi.section_id
+                JOIN menus m ON m.id = ms.menu_id
+                WHERE m.branch_id = ?
+                ORDER BY mi.id
+                """;
         List<MenuItem> items = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                items.add(new MenuItem(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("section_id"),
-                        resultSet.getString("title"),
-                        resultSet.getString("description"),
-                        resultSet.getDouble("price"),
-                        resultSet.getBoolean("available"),
-                        resultSet.getString("image_url")
-                ));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    items.add(new MenuItem(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("section_id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("description"),
+                            resultSet.getDouble("price"),
+                            resultSet.getBoolean("available"),
+                            resultSet.getString("image_url")
+                    ));
+                }
             }
             return items;
         } catch (SQLException e) {
@@ -255,18 +273,26 @@ public class ManagementRepository {
     }
 
     public List<MenuSection> findMenuSections() {
-        String sql = "SELECT * FROM menu_sections ORDER BY id";
+        String sql = """
+                SELECT ms.*
+                FROM menu_sections ms
+                JOIN menus m ON m.id = ms.menu_id
+                WHERE m.branch_id = ?
+                ORDER BY ms.id
+                """;
         List<MenuSection> sections = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                sections.add(new MenuSection(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("menu_id"),
-                        resultSet.getString("title"),
-                        resultSet.getString("description")
-                ));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    sections.add(new MenuSection(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("menu_id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("description")
+                    ));
+                }
             }
             return sections;
         } catch (SQLException e) {
@@ -278,6 +304,7 @@ public class ManagementRepository {
         String sql = "INSERT INTO menu_items (section_id, title, description, price, available, image_url) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            validateMenuSection(connection, item.getSectionId());
             fillMenuItemStatement(statement, item);
             statement.executeUpdate();
             item.setMenuItemID(generatedId(statement, "Menu item ID generatsiya bo'lmadi"));
@@ -294,6 +321,7 @@ public class ManagementRepository {
                 WHERE id = ?""";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+            validateMenuSection(connection, item.getSectionId());
             fillMenuItemStatement(statement, item);
             statement.setInt(7, item.getMenuItemID());
             statement.executeUpdate();
@@ -307,20 +335,22 @@ public class ManagementRepository {
     }
 
     public List<Table> findTables() {
-        String sql = "SELECT * FROM restaurant_tables ORDER BY id";
+        String sql = "SELECT * FROM restaurant_tables WHERE branch_id = ? ORDER BY id";
         List<Table> tables = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                tables.add(new Table(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("branch_id"),
-                        resultSet.getString("table_number"),
-                        TableStatus.valueOf(resultSet.getString("status")),
-                        resultSet.getInt("max_capacity"),
-                        resultSet.getInt("location_id")
-                ));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    tables.add(new Table(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("branch_id"),
+                            resultSet.getString("table_number"),
+                            TableStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getInt("max_capacity"),
+                            resultSet.getInt("location_id")
+                    ));
+                }
             }
             return tables;
         } catch (SQLException e) {
@@ -328,19 +358,69 @@ public class ManagementRepository {
         }
     }
 
+    public List<Table> findAvailableTables(LocalDateTime reservationTime, int peopleCount, Integer excludeReservationId) {
+        String sql = """
+                SELECT t.*
+                FROM restaurant_tables t
+                WHERE t.branch_id = ?
+                  AND t.max_capacity >= ?
+                  AND t.status <> 'OUT_OF_SERVIS'
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM reservations r
+                      WHERE r.table_id = t.id
+                        AND r.branch_id = t.branch_id
+                        AND r.status NOT IN ('canceled', 'abandoned')
+                        AND ABS(TIMESTAMPDIFF(MINUTE, r.reservation_time, ?)) < 120
+                        AND (? IS NULL OR r.id <> ?)
+                  )
+                ORDER BY t.max_capacity, t.table_number
+                """;
+        List<Table> tables = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            statement.setInt(2, peopleCount);
+            statement.setTimestamp(3, Timestamp.valueOf(reservationTime));
+            if (excludeReservationId == null) {
+                statement.setObject(4, null);
+                statement.setObject(5, null);
+            } else {
+                statement.setInt(4, excludeReservationId);
+                statement.setInt(5, excludeReservationId);
+            }
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    tables.add(new Table(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("branch_id"),
+                            resultSet.getString("table_number"),
+                            TableStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getInt("max_capacity"),
+                            resultSet.getInt("location_id")
+                    ));
+                }
+            }
+            return tables;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Bo'sh stollarni olishda xatolik yuz berdi", e);
+        }
+    }
+
     public Table createTable(Table table) {
         String sql = """
                 INSERT INTO restaurant_tables (branch_id, table_number, status, max_capacity, location_id)
-                VALUES (1, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, table.getTableNumber());
-            statement.setString(2, table.getStatus().name());
-            statement.setInt(3, table.getMaxCapacity());
-            statement.setInt(4, table.getLocationId());
+            statement.setInt(1, branchId());
+            statement.setString(2, table.getTableNumber());
+            statement.setString(3, table.getStatus().name());
+            statement.setInt(4, table.getMaxCapacity());
+            statement.setInt(5, table.getLocationId());
             statement.executeUpdate();
-            return new Table(generatedId(statement, "Table ID generatsiya bo'lmadi"), 1,
+            return new Table(generatedId(statement, "Table ID generatsiya bo'lmadi"), branchId(),
                     table.getTableNumber(), table.getStatus(), table.getMaxCapacity(), table.getLocationId());
         } catch (SQLException e) {
             throw new IllegalStateException("Table qo'shishda xatolik yuz berdi", e);
@@ -350,7 +430,7 @@ public class ManagementRepository {
     public void updateTable(Table table) {
         String sql = """
                 UPDATE restaurant_tables
-                SET table_number = ?, status = ?, max_capacity = ?, location_id = ?
+                SET table_number = ?, status = ?, max_capacity = ?, location_id = ?, branch_id = ?
                 WHERE id = ?
                 """;
         try (Connection connection = DBConnection.getConnection();
@@ -359,7 +439,8 @@ public class ManagementRepository {
             statement.setString(2, table.getStatus().name());
             statement.setInt(3, table.getMaxCapacity());
             statement.setInt(4, table.getLocationId());
-            statement.setInt(5, table.getTableId());
+            statement.setInt(5, branchId());
+            statement.setInt(6, table.getTableId());
             statement.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Table yangilashda xatolik yuz berdi", e);
@@ -376,11 +457,13 @@ public class ManagementRepository {
                 SELECT r.*, c.full_name, c.email, c.phone, c.branch_id AS customer_branch_id
                 FROM reservations r
                 JOIN customers c ON c.id = r.customer_id
+                WHERE r.branch_id = ?
                 ORDER BY r.id
                 """;
         List<Reservation> reservations = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     Customer customer = new Customer(
@@ -416,14 +499,14 @@ public class ManagementRepository {
     public Reservation createReservation(Reservation reservation) {
         String sql = """
                 INSERT INTO reservations (customer_id, table_id, reservation_time, people_count, status, notes, check_in_time, branch_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            fillReservationStatement(statement, reservation, 1);
+            fillReservationStatement(statement, reservation);
             statement.executeUpdate();
             reservation.setReservationId(generatedId(statement, "Reservation ID generatsiya bo'lmadi"));
-            reservation.setBranchId(1);
+            reservation.setBranchId(branchId());
             return reservation;
         } catch (SQLException e) {
             throw new IllegalStateException("Reservation qo'shishda xatolik yuz berdi", e);
@@ -438,7 +521,7 @@ public class ManagementRepository {
                 """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            fillReservationStatement(statement, reservation, 1);
+            fillReservationStatement(statement, reservation);
             statement.setInt(9, reservation.getReservationId());
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -452,24 +535,26 @@ public class ManagementRepository {
     }
 
     public List<Order> findOrders() {
-        String sql = "SELECT * FROM orders ORDER BY id";
+        String sql = "SELECT * FROM orders WHERE branch_id = ? ORDER BY id";
         List<Order> orders = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                Order order = new Order(
-                        resultSet.getInt("id"),
-                        (Integer) resultSet.getObject("branch_id"),
-                        (Integer) resultSet.getObject("customer_id"),
-                        (Integer) resultSet.getObject("waiter_id"),
-                        (Integer) resultSet.getObject("table_id"),
-                        OrderStatus.valueOf(resultSet.getString("status")),
-                        resultSet.getTimestamp("created_at").toLocalDateTime(),
-                        resultSet.getDouble("total_amount")
-                );
-                order.getItems().addAll(findOrderItems(connection, order.getOrderID()));
-                orders.add(order);
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    Order order = new Order(
+                            resultSet.getInt("id"),
+                            (Integer) resultSet.getObject("branch_id"),
+                            (Integer) resultSet.getObject("customer_id"),
+                            (Integer) resultSet.getObject("waiter_id"),
+                            (Integer) resultSet.getObject("table_id"),
+                            OrderStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getTimestamp("created_at").toLocalDateTime(),
+                            resultSet.getDouble("total_amount")
+                    );
+                    order.getItems().addAll(findOrderItems(connection, order.getOrderID()));
+                    orders.add(order);
+                }
             }
             return orders;
         } catch (SQLException e) {
@@ -480,7 +565,7 @@ public class ManagementRepository {
     public Order createOrder(Order order) {
         String sql = """
                 INSERT INTO orders (branch_id, customer_id, waiter_id, table_id, status, created_at, total_amount)
-                VALUES (1, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = DBConnection.getConnection()) {
             connection.setAutoCommit(false);
@@ -488,19 +573,20 @@ public class ManagementRepository {
                 double totalAmount = calculateOrderTotal(order);
                 order.setTotalAmount(totalAmount);
 
-                statement.setObject(1, order.getCustomerId());
-                statement.setObject(2, order.getWaiterId());
-                statement.setObject(3, order.getTableId());
-                statement.setString(4, order.getStatus().name());
-                statement.setTimestamp(5, Timestamp.valueOf(order.getCreatedAt()));
-                statement.setDouble(6, totalAmount);
+                statement.setInt(1, branchId());
+                statement.setObject(2, order.getCustomerId());
+                statement.setObject(3, order.getWaiterId());
+                statement.setObject(4, order.getTableId());
+                statement.setString(5, order.getStatus().name());
+                statement.setTimestamp(6, Timestamp.valueOf(order.getCreatedAt()));
+                statement.setDouble(7, totalAmount);
                 statement.executeUpdate();
 
                 int orderId = generatedId(statement, "Order ID generatsiya bo'lmadi");
                 insertOrderItems(connection, orderId, order.getItems());
                 connection.commit();
 
-                Order createdOrder = new Order(orderId, 1, order.getCustomerId(), order.getWaiterId(),
+                Order createdOrder = new Order(orderId, branchId(), order.getCustomerId(), order.getWaiterId(),
                         order.getTableId(), order.getStatus(), order.getCreatedAt(), totalAmount);
                 createdOrder.getItems().addAll(order.getItems());
                 return createdOrder;
@@ -550,21 +636,29 @@ public class ManagementRepository {
     }
 
     public List<PaymentRecord> findPayments() {
-        String sql = "SELECT * FROM payments ORDER BY id";
+        String sql = """
+                SELECT p.*
+                FROM payments p
+                JOIN orders o ON o.id = p.order_id
+                WHERE o.branch_id = ?
+                ORDER BY p.id
+                """;
         List<PaymentRecord> payments = new ArrayList<>();
         try (Connection connection = DBConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
-            while (resultSet.next()) {
-                payments.add(new PaymentRecord(
-                        resultSet.getInt("id"),
-                        resultSet.getInt("order_id"),
-                        resultSet.getDouble("amount"),
-                        PaymentMethod.valueOf(resultSet.getString("method")),
-                        PaymentStatus.valueOf(resultSet.getString("status")),
-                        resultSet.getTimestamp("created_at").toLocalDateTime(),
-                        resultSet.getString("details")
-                ));
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    payments.add(new PaymentRecord(
+                            resultSet.getInt("id"),
+                            resultSet.getInt("order_id"),
+                            resultSet.getDouble("amount"),
+                            PaymentMethod.valueOf(resultSet.getString("method")),
+                            PaymentStatus.valueOf(resultSet.getString("status")),
+                            resultSet.getTimestamp("created_at").toLocalDateTime(),
+                            resultSet.getString("details")
+                    ));
+                }
             }
             return payments;
         } catch (SQLException e) {
@@ -579,6 +673,7 @@ public class ManagementRepository {
                 """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            validateOrderBranch(connection, payment.getOrderId());
             fillPaymentStatement(statement, payment);
             statement.executeUpdate();
             return new PaymentRecord(generatedId(statement, "Payment ID generatsiya bo'lmadi"), payment.getOrderId(),
@@ -596,6 +691,7 @@ public class ManagementRepository {
                 """;
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+            validateOrderBranch(connection, payment.getOrderId());
             fillPaymentStatement(statement, payment);
             statement.setInt(7, payment.getId());
             statement.executeUpdate();
@@ -636,7 +732,7 @@ public class ManagementRepository {
                 resultSet.getString("date_joined"),
                 resultSet.getString("role"),
                 account,
-                1 // Default branch
+                resultSet.getInt("branch_id")
         );
     }
 
@@ -651,7 +747,7 @@ public class ManagementRepository {
         statement.setString(6, item.getImageUrl());
     }
 
-    private void fillReservationStatement(PreparedStatement statement, Reservation reservation, int branchId) throws SQLException {
+    private void fillReservationStatement(PreparedStatement statement, Reservation reservation) throws SQLException {
         statement.setInt(1, reservation.getCustomer().getCustomerId());
         if (reservation.getTableId() == null) {
             statement.setObject(2, null);
@@ -667,11 +763,11 @@ public class ManagementRepository {
         } else {
             statement.setTimestamp(7, Timestamp.valueOf(reservation.getCheckInTime()));
         }
-        statement.setInt(8, 1); // Fixed branch ID
+        statement.setInt(8, branchId());
     }
 
     private void fillOrderStatement(PreparedStatement statement, Order order) throws SQLException {
-        statement.setInt(1, 1); // branch_id = 1
+        statement.setInt(1, branchId());
         statement.setObject(2, order.getCustomerId());
         statement.setObject(3, order.getWaiterId());
         statement.setObject(4, order.getTableId());
@@ -768,10 +864,11 @@ public class ManagementRepository {
         if (!"Manager".equalsIgnoreCase(role)) {
             return;
         }
-        String sql = "SELECT COUNT(*) FROM employees WHERE role = 'Manager' AND id <> ?";
+        String sql = "SELECT COUNT(*) FROM employees WHERE role = 'Manager' AND branch_id = ? AND id <> ?";
         try (Connection connection = DBConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, employeeId);
+            statement.setInt(1, branchId());
+            statement.setInt(2, employeeId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 resultSet.next();
                 if (resultSet.getInt(1) > 0) {
@@ -780,6 +877,30 @@ public class ManagementRepository {
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Manager validatsiyasida xatolik yuz berdi", e);
+        }
+    }
+
+    private int branchId() {
+        return currentUser != null && currentUser.getBranchId() != null ? currentUser.getBranchId() : 1;
+    }
+
+    private int countMenuItems() {
+        String sql = """
+                SELECT COUNT(*)
+                FROM menu_items mi
+                JOIN menu_sections ms ON ms.id = mi.section_id
+                JOIN menus m ON m.id = ms.menu_id
+                WHERE m.branch_id = ?
+                """;
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Menu statistikani olishda xatolik yuz berdi", e);
         }
     }
 
@@ -792,11 +913,50 @@ public class ManagementRepository {
     }
 
     private int count(Connection connection, String tableExpression) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM " + tableExpression;
+        String sql = "SELECT COUNT(*) FROM " + tableExpression
+                + (tableExpression.toUpperCase().contains(" WHERE ") ? " AND branch_id = ?" : " WHERE branch_id = ?");
         try (PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet resultSet = statement.executeQuery()) {
+             ResultSet resultSet = executeCount(statement)) {
             resultSet.next();
             return resultSet.getInt(1);
+        }
+    }
+
+    private ResultSet executeCount(PreparedStatement statement) throws SQLException {
+        statement.setInt(1, branchId());
+        return statement.executeQuery();
+    }
+
+    private void validateMenuSection(Connection connection, int sectionId) throws SQLException {
+        String sql = """
+                SELECT COUNT(*)
+                FROM menu_sections ms
+                JOIN menus m ON m.id = ms.menu_id
+                WHERE ms.id = ? AND m.branch_id = ?
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, sectionId);
+            statement.setInt(2, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                if (resultSet.getInt(1) == 0) {
+                    throw new IllegalArgumentException("Menu section topilmadi");
+                }
+            }
+        }
+    }
+
+    private void validateOrderBranch(Connection connection, int orderId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM orders WHERE id = ? AND branch_id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, orderId);
+            statement.setInt(2, branchId());
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                if (resultSet.getInt(1) == 0) {
+                    throw new IllegalArgumentException("Order ushbu filialga tegishli emas");
+                }
+            }
         }
     }
 
