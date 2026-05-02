@@ -12,7 +12,7 @@ public final class DBConnection {
             "jdbc:mysql://127.0.0.1:3306/restaurant_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Tashkent"
     );
     private static final String USER = AppProperties.get("db.username", "root");
-    private static final String PASSWORD = AppProperties.get("db.password", "");
+    private static final String PASSWORD = AppProperties.get("db.password", "root");
 
     static {
         try {
