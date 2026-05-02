@@ -70,6 +70,7 @@ public class ManagerController {
     private final ObservableList<OrderItemRow> orderItemRows = FXCollections.observableArrayList();
     private final Map<Integer, String> customerNameMap = new HashMap<>();
     private final Map<Integer, String> employeeNameMap = new HashMap<>();
+    private final Map<Integer, String> orderPaymentStatusMap = new HashMap<>();
     private List<Table> cachedBranchTables = List.of();
 
     public static final class OrderItemRow {
@@ -77,15 +78,13 @@ public class ManagerController {
         private final SimpleStringProperty title = new SimpleStringProperty();
         private final SimpleDoubleProperty unitPrice = new SimpleDoubleProperty();
         private final SimpleIntegerProperty quantity = new SimpleIntegerProperty();
-        private final SimpleIntegerProperty seatNumber = new SimpleIntegerProperty();
         private final SimpleDoubleProperty lineTotal = new SimpleDoubleProperty();
 
-        public OrderItemRow(MenuItem menuItem, int quantity, int seatNumber) {
+        public OrderItemRow(MenuItem menuItem, int quantity) {
             this.menuItem = menuItem;
             this.title.set(menuItem.getTitle());
             this.unitPrice.set(menuItem.getPrice());
             this.quantity.set(Math.max(1, quantity));
-            this.seatNumber.set(seatNumber);
             recalc();
             this.quantity.addListener((obs, oldV, newV) -> recalc());
         }
@@ -118,14 +117,6 @@ public class ManagerController {
 
         public double getLineTotal() {
             return lineTotal.get();
-        }
-
-        public int getSeatNumber() {
-            return seatNumber.get();
-        }
-
-        public void setSeatNumber(int value) {
-            seatNumber.set(value);
         }
     }
 
@@ -282,6 +273,8 @@ public class ManagerController {
     @FXML
     private TableColumn<Order, String> orderStatusColumn;
     @FXML
+    private TableColumn<Order, String> orderCashStatusColumn;
+    @FXML
     private TableColumn<Order, Number> orderTotalColumn;
     @FXML
     private ChoiceBox<Customer> orderCustomerBox;
@@ -296,8 +289,6 @@ public class ManagerController {
     @FXML
     private TextField orderItemQtyField;
     @FXML
-    private TextField orderItemSeatField;
-    @FXML
     private TableView<OrderItemRow> orderItemTable;
     @FXML
     private TableColumn<OrderItemRow, String> orderItemTitleColumn;
@@ -309,8 +300,6 @@ public class ManagerController {
     private TableColumn<OrderItemRow, Integer> orderItemQtyColumn;
     @FXML
     private TableColumn<OrderItemRow, Double> orderItemLineTotalColumn;
-    @FXML
-    private TableColumn<OrderItemRow, Integer> orderItemSeatColumn;
     @FXML
     private ChoiceBox<String> orderStatusBox;
     @FXML
@@ -404,6 +393,7 @@ public class ManagerController {
         orderCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(customerNameMap.getOrDefault(data.getValue().getCustomerId(), String.valueOf(data.getValue().getCustomerId()))));
         orderWaiterIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(employeeNameMap.getOrDefault(data.getValue().getWaiterId(), String.valueOf(data.getValue().getWaiterId()))));
         orderStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
+        orderCashStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(orderPaymentStatusMap.getOrDefault(data.getValue().getOrderID(), "UNPAID")));
         orderTotalColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getTotalAmount()));
 
         paymentOrderIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getOrderId()));
@@ -561,7 +551,6 @@ public class ManagerController {
             recalculateOrderTotal();
             orderItemTable.refresh();
         });
-        orderItemSeatColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getSeatNumber()));
         orderItemLineTotalColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getLineTotal()));
     }
 
@@ -649,6 +638,7 @@ public class ManagerController {
             List<Employee> employees = managementService.getEmployees();
             List<Order> orders = managementService.getOrders();
             List<Reservation> reservations = managementService.getReservations();
+            List<PaymentRecord> payments = managementService.getPayments();
 
             cachedBranchTables = List.copyOf(tables);
 
@@ -656,6 +646,8 @@ public class ManagerController {
             customers.forEach(c -> customerNameMap.put(c.getCustomerId(), c.getFullName()));
             employeeNameMap.clear();
             employees.forEach(e -> employeeNameMap.put(e.getEmployeeID(), e.getFullName()));
+            orderPaymentStatusMap.clear();
+            payments.forEach(payment -> orderPaymentStatusMap.put(payment.getOrderId(), payment.getStatus().name()));
 
             employeeTable.setItems(FXCollections.observableArrayList(employees));
             customerTable.setItems(FXCollections.observableArrayList(customers));
@@ -663,7 +655,7 @@ public class ManagerController {
             diningTableTable.setItems(FXCollections.observableArrayList(tables));
             reservationTable.setItems(FXCollections.observableArrayList(reservations));
             orderTable.setItems(FXCollections.observableArrayList(orders));
-            paymentTable.setItems(FXCollections.observableArrayList(managementService.getPayments()));
+            paymentTable.setItems(FXCollections.observableArrayList(payments));
 
             orderCustomerBox.setItems(FXCollections.observableArrayList(customers));
             List<Employee> waiters = employees
@@ -746,7 +738,7 @@ public class ManagerController {
                 orderTableBox.setVisible(false);
                 orderTableBox.setManaged(false);
             }
-            case "Cashier" -> mainTabPane.getTabs().addAll(ordersTab, paymentsTab);
+            case "Cashier" -> mainTabPane.getTabs().setAll(paymentsTab);
             default -> mainTabPane.getTabs().addAll(customerTabPane, reservationsTab);
         }
     }
@@ -1065,24 +1057,22 @@ public class ManagerController {
         try {
             MenuItem menuItem = requireSelection(orderMenuItemBox.getValue(), "Menu item");
             int qty = isBlank(orderItemQtyField.getText()) ? 1 : parseInt(orderItemQtyField.getText(), "Qty");
-            int seat = isBlank(orderItemSeatField.getText()) ? 1 : parseInt(orderItemSeatField.getText(), "Seat");
             if (qty <= 0) {
                 throw new IllegalArgumentException("Qty 1 dan katta bo'lishi kerak");
             }
 
             OrderItemRow existing = orderItemRows.stream()
-                    .filter(row -> row.getMenuItem().getMenuItemID() == menuItem.getMenuItemID() && row.getSeatNumber() == seat)
+                    .filter(row -> row.getMenuItem().getMenuItemID() == menuItem.getMenuItemID())
                     .findFirst()
                     .orElse(null);
             if (existing == null) {
-                orderItemRows.add(new OrderItemRow(menuItem, qty, seat));
+                orderItemRows.add(new OrderItemRow(menuItem, qty));
             } else {
                 existing.setQuantity(existing.getQuantity() + qty);
                 orderItemTable.refresh();
             }
 
             orderItemQtyField.setText("1");
-            orderItemSeatField.setText(String.valueOf(seat));
             recalculateOrderTotal();
         } catch (Exception e) {
             setStatus(e.getMessage(), true);
@@ -1124,7 +1114,7 @@ public class ManagerController {
                         selected == null ? 0 : selected.getOrderID(),
                         row.getQuantity(),
                         row.getMenuItem(),
-                        row.getSeatNumber()
+                        1
                 ));
             }
             order.setTotalAmount(calculateSelectedOrderTotal());
@@ -1169,7 +1159,6 @@ public class ManagerController {
         refreshOrderTableOptions(null, null);
         orderMenuItemBox.setValue(null);
         orderItemQtyField.setText("1");
-        orderItemSeatField.setText("1");
         orderItemRows.clear();
         orderStatusBox.setValue(OrderStatus.RECEIVED.name());
         orderCreatedAtField.setText(formatDateTime(LocalDateTime.now()));
@@ -1376,7 +1365,7 @@ public class ManagerController {
 
         orderItemRows.clear();
         for (MealItem mealItem : order.getItems()) {
-            orderItemRows.add(new OrderItemRow(mealItem.getMenuItem(), mealItem.getQuantity(), mealItem.getSeatNumber()));
+            orderItemRows.add(new OrderItemRow(mealItem.getMenuItem(), mealItem.getQuantity()));
         }
         orderItemQtyField.setText("1");
         orderStatusBox.setValue(order.getStatus().name());
