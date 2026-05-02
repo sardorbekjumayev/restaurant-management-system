@@ -178,6 +178,7 @@ public final class DatabaseInitializer {
                         order_id INT NOT NULL,
                         menu_item_id INT NOT NULL,
                         quantity INT NOT NULL,
+                        seat_number INT DEFAULT 1,
                         CONSTRAINT fk_order_item_order
                             FOREIGN KEY (order_id) REFERENCES orders(id)
                             ON DELETE CASCADE,
@@ -200,10 +201,25 @@ public final class DatabaseInitializer {
                             ON DELETE CASCADE
                     )
                     """);
+            
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        id INT PRIMARY KEY AUTO_INCREMENT,
+                        user_id INT NOT NULL,
+                        message TEXT NOT NULL,
+                        type VARCHAR(50),
+                        created_at DATETIME NOT NULL,
+                        is_read BOOLEAN DEFAULT FALSE,
+                        CONSTRAINT fk_notification_user
+                            FOREIGN KEY (user_id) REFERENCES accounts(id)
+                            ON DELETE CASCADE
+                    )
+                    """);
 
             addColumnIfMissing(connection, "customers", "branch_id", "ALTER TABLE customers ADD COLUMN branch_id INT NULL");
             addColumnIfMissing(connection, "reservations", "branch_id", "ALTER TABLE reservations ADD COLUMN branch_id INT NULL");
             addColumnIfMissing(connection, "orders", "branch_id", "ALTER TABLE orders ADD COLUMN branch_id INT NULL");
+            addColumnIfMissing(connection, "order_items", "seat_number", "ALTER TABLE order_items ADD COLUMN seat_number INT DEFAULT 1");
 
             seedDefaultData(connection);
         } catch (SQLException e) {
@@ -215,6 +231,7 @@ public final class DatabaseInitializer {
         insertAddress(connection, 1, "Amir Temur ko'chasi 10", "Tashkent", "Yunusobod", "100000", "Uzbekistan");
         insertAddress(connection, 2, "Buyuk Ipak Yo'li 42", "Tashkent", "Mirzo Ulug'bek", "100077", "Uzbekistan");
         insertBranch(connection, 1, "Main Branch", 1);
+        insertBranch(connection, 2, "East Branch", 2);
 
         insertAccount(connection, 2, "manager", PasswordUtil.hash("pass"), "Manager", "ACTIVE");
         insertAccount(connection, 3, "waiter", PasswordUtil.hash("123"), "Waiter", "ACTIVE");
@@ -233,19 +250,30 @@ public final class DatabaseInitializer {
                 "Receptionist", "2025-02-17", 5, 1);
         insertEmployee(connection, 5, "Dilshod Cashier", "cashier@restaurant.uz", "+998901112277",
                 "Cashier", "2025-02-17", 6, 1);
+        insertEmployee(connection, 6, "Sardor Manager", "manager2@restaurant.uz", "+998901112288",
+                "Manager", "2025-03-01", 7, 2);
 
         insertCustomer(connection, 1, "Aziza Karimova", "aziza@mail.com", "+998971112233", 1);
+        insertCustomer(connection, 2, "Bekzod Aliyev", "bekzod@mail.com", "+998971112244", 2);
 
         insertMenu(connection, 1, 1, "Main Menu", "Daily restaurant menu");
+        insertMenu(connection, 2, 2, "East Menu", "Branch specific menu");
         insertMenuSection(connection, 1, 1, "Main Dishes", "Signature dishes");
         insertMenuSection(connection, 2, 1, "Drinks", "Fresh drinks");
+        insertMenuSection(connection, 3, 1, "Desserts", "Sweet desserts");
+        insertMenuSection(connection, 4, 2, "Main Dishes", "East branch dishes");
+        insertMenuSection(connection, 5, 2, "Drinks", "East branch drinks");
         insertMenuItem(connection, 1, 1, "Plov", "Traditional Uzbek plov", 45000, true);
         insertMenuItem(connection, 2, 1, "Steak", "Medium grilled steak", 95000, true);
         insertMenuItem(connection, 3, 2, "Lemonade", "Homemade lemonade", 18000, true);
+        insertMenuItem(connection, 4, 4, "Lagman", "Hand-pulled noodle soup", 42000, true);
+        insertMenuItem(connection, 5, 5, "Tea", "Green tea pot", 12000, true);
 
         insertTable(connection, 1, 1, "T1", "FREE", 4, 1);
         insertTable(connection, 2, 1, "T2", "RESERVED", 6, 1);
         insertTable(connection, 3, 1, "T3", "OCCUPIED", 2, 2);
+        insertTable(connection, 4, 2, "E1", "FREE", 4, 1);
+        insertTable(connection, 5, 2, "E2", "FREE", 6, 2);
         migrateExistingRows(connection);
         addColumnIfMissing(connection, "menu_items", "image_url", "ALTER TABLE menu_items ADD COLUMN image_url VARCHAR(500)");
     }

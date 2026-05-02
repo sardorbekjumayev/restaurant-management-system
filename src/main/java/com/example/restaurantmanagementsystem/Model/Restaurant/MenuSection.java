@@ -44,4 +44,9 @@ public class MenuSection {
     public List<MenuItem> getMenuItems() {
         return menuItems;
     }
+
+    @Override
+    public String toString() {
+        return title;
+    }
 }

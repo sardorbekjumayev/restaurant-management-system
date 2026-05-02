@@ -1,25 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.ComboBox?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.SplitPane?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.VBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
-<BorderPane prefHeight="860.0" prefWidth="1320.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.restaurantmanagementsystem.Controller.ManagerController">
+<BorderPane prefHeight="860.0" prefWidth="1320.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.restaurantmanagementsystem.Controller.ManagerController">
    <top>
       <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="18.0" style="-fx-background-color: #0f766e;" BorderPane.alignment="CENTER">
          <padding>
@@ -138,6 +125,19 @@
                                     <Label text="Date Joined" GridPane.columnIndex="0" GridPane.rowIndex="6" />
                                     <TextField fx:id="employeeDateJoinedField" promptText="yyyy-MM-dd" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -176,6 +176,15 @@
                                     <Label text="Phone" GridPane.rowIndex="2" />
                                     <TextField fx:id="customerPhoneField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -216,14 +225,25 @@
                                     <TextField fx:id="menuPriceField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                     <Label text="Available" GridPane.rowIndex="3" />
                                     <CheckBox fx:id="menuAvailableCheck" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                                    <Label text="Image" GridPane.rowIndex="4"/>
+                                    <Label text="Image" GridPane.rowIndex="4" />
                                     <HBox spacing="10.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
                                        <children>
-                                          <Button text="Browse..." onAction="#chooseMenuImage" />
+                                          <Button onAction="#chooseMenuImage" text="Browse..." />
                                           <Label fx:id="menuImageLabel" text="No file selected" />
                                        </children>
                                     </HBox>
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -249,7 +269,7 @@
                               <TableColumn fx:id="diningTableCapacityColumn" prefWidth="120.0" text="Capacity" />
                            </columns>
                         </TableView>
-                        <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
+                        <VBox fx:id="diningTableForm" spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
                            <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
                            <children>
                               <Label text="Dining Table Form" />
@@ -264,6 +284,16 @@
                                     <Label text="Location ID" GridPane.rowIndex="3" />
                                     <TextField fx:id="diningTableLocationField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -293,6 +323,15 @@
                         <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
                            <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
                            <children>
+                              <Label text="Table Search (Available Tables)" />
+                              <HBox spacing="8.0">
+                                 <children>
+                                    <DatePicker fx:id="searchDatePicker" prefWidth="120.0" />
+                                    <TextField fx:id="searchTimeField" prefWidth="70.0" promptText="HH:mm" />
+                                    <Button onAction="#searchAvailableTables" text="Search" />
+                                 </children>
+                              </HBox>
+                              <Separator />
                               <Label text="Reservation Form" />
                               <GridPane hgap="10.0" vgap="10.0">
                                  <children>
@@ -311,6 +350,19 @@
                                     <Label text="Notes" GridPane.rowIndex="6" />
                                     <TextArea fx:id="reservationNotesField" prefHeight="90.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -334,6 +386,7 @@
                               <TableColumn fx:id="orderCustomerIdColumn" prefWidth="120.0" text="Customer" />
                               <TableColumn fx:id="orderWaiterIdColumn" prefWidth="120.0" text="Waiter" />
                               <TableColumn fx:id="orderStatusColumn" prefWidth="150.0" text="Status" />
+                              <TableColumn fx:id="orderCashStatusColumn" prefWidth="140.0" text="Cash Status" />
                               <TableColumn fx:id="orderTotalColumn" prefWidth="120.0" text="Total" />
                            </columns>
                         </TableView>
@@ -343,24 +396,35 @@
                               <Label text="Order Form" />
                               <GridPane hgap="10.0" vgap="10.0">
                                  <children>
-                                    <Label text="Customer" GridPane.rowIndex="0" />
+                                    <Label fx:id="orderCustomerLabel" text="Customer" GridPane.rowIndex="0" />
                                     <ChoiceBox fx:id="orderCustomerBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                                    <Label text="Waiter" GridPane.rowIndex="1" />
+                                    <Label fx:id="orderWaiterLabel" text="Waiter" GridPane.rowIndex="1" />
                                     <ChoiceBox fx:id="orderWaiterBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                                    <Label text="Table" GridPane.rowIndex="2" />
+                                    <Label fx:id="orderTableLabel" text="Table" GridPane.rowIndex="2" />
                                     <ChoiceBox fx:id="orderTableBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                                     <Label text="Status" GridPane.rowIndex="3" />
                                     <ChoiceBox fx:id="orderStatusBox" prefWidth="260.0" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                     <Label text="Created At" GridPane.rowIndex="4" />
                                     <TextField fx:id="orderCreatedAtField" promptText="yyyy-MM-dd HH:mm" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
 
-                              <HBox spacing="10.0" alignment="CENTER_LEFT">
+                              <HBox alignment="CENTER_LEFT" spacing="10.0">
                                  <children>
                                     <ComboBox fx:id="orderMenuItemBox" prefWidth="250.0" />
                                     <!-- New Image View for ordering -->
-                                    <javafx.scene.image.ImageView fx:id="orderItemImageView" fitHeight="60.0" fitWidth="60.0" preserveRatio="true"/>
+                                    <javafx.scene.image.ImageView fx:id="orderItemImageView" fitHeight="60.0" fitWidth="60.0" preserveRatio="true" />
 
                                     <TextField fx:id="orderItemQtyField" prefWidth="60.0" promptText="Qty" />
                                     <Button mnemonicParsing="false" onAction="#addOrderItem" text="Add" />
@@ -383,6 +447,13 @@
                                     <Label text="Order Total" GridPane.rowIndex="0" />
                                     <TextField fx:id="orderTotalField" editable="false" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
@@ -428,6 +499,18 @@
                                     <Label text="Details" GridPane.rowIndex="5" />
                                     <TextArea fx:id="paymentDetailsField" prefHeight="100.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                                  </children>
+                                 <columnConstraints>
+                                    <ColumnConstraints />
+                                    <ColumnConstraints />
+                                 </columnConstraints>
+                                 <rowConstraints>
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                    <RowConstraints />
+                                 </rowConstraints>
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>

@@ -12,7 +12,6 @@ import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
-import com.example.restaurantmanagementsystem.Model.Users.Account;
 import com.example.restaurantmanagementsystem.Model.Users.Customer;
 import com.example.restaurantmanagementsystem.Model.Users.Employee;
 import com.example.restaurantmanagementsystem.Model.Users.Reservation;
@@ -40,20 +39,24 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import javafx.util.converter.IntegerStringConverter;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Separator;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.io.File;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import javafx.stage.FileChooser;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.Image;
 import javafx.geometry.Pos;
@@ -65,6 +68,10 @@ public class ManagerController {
     private User currentUser;
 
     private final ObservableList<OrderItemRow> orderItemRows = FXCollections.observableArrayList();
+    private final Map<Integer, String> customerNameMap = new HashMap<>();
+    private final Map<Integer, String> employeeNameMap = new HashMap<>();
+    private final Map<Integer, String> orderPaymentStatusMap = new HashMap<>();
+    private List<Table> cachedBranchTables = List.of();
 
     public static final class OrderItemRow {
         private final MenuItem menuItem;
@@ -147,6 +154,8 @@ public class ManagerController {
     private Tab ordersTab;
     @FXML
     private Tab paymentsTab;
+    @FXML
+    private VBox diningTableForm;
 
     @FXML
     private TableView<Employee> employeeTable;
@@ -229,7 +238,7 @@ public class ManagerController {
     @FXML
     private TableView<Reservation> reservationTable;
     @FXML
-    private TableColumn<Reservation, Number> reservationCustomerIdColumn;
+    private TableColumn<Reservation, String> reservationCustomerIdColumn;
     @FXML
     private TableColumn<Reservation, Number> reservationTableIdColumn;
     @FXML
@@ -250,15 +259,21 @@ public class ManagerController {
     private TextArea reservationNotesField;
     @FXML
     private TextField reservationCheckInField;
+    @FXML
+    private DatePicker searchDatePicker;
+    @FXML
+    private TextField searchTimeField;
 
     @FXML
     private TableView<Order> orderTable;
     @FXML
-    private TableColumn<Order, Number> orderCustomerIdColumn;
+    private TableColumn<Order, String> orderCustomerIdColumn;
     @FXML
-    private TableColumn<Order, Number> orderWaiterIdColumn;
+    private TableColumn<Order, String> orderWaiterIdColumn;
     @FXML
     private TableColumn<Order, String> orderStatusColumn;
+    @FXML
+    private TableColumn<Order, String> orderCashStatusColumn;
     @FXML
     private TableColumn<Order, Number> orderTotalColumn;
     @FXML
@@ -291,6 +306,12 @@ public class ManagerController {
     private TextField orderCreatedAtField;
     @FXML
     private TextField orderTotalField;
+    @FXML
+    private Label orderCustomerLabel;
+    @FXML
+    private Label orderWaiterLabel;
+    @FXML
+    private Label orderTableLabel;
 
     @FXML
     private TableView<PaymentRecord> paymentTable;
@@ -364,14 +385,15 @@ public class ManagerController {
         diningTableStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
         diningTableCapacityColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getMaxCapacity()));
 
-        reservationCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getCustomer().getCustomerId()));
+        reservationCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getCustomer().getFullName()));
         reservationTableIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getTableId()));
         reservationTimeColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(formatDateTime(data.getValue().getTimeOfReservation())));
         reservationStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
 
-        orderCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getCustomerId()));
-        orderWaiterIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getWaiterId()));
+        orderCustomerIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(customerNameMap.getOrDefault(data.getValue().getCustomerId(), String.valueOf(data.getValue().getCustomerId()))));
+        orderWaiterIdColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(employeeNameMap.getOrDefault(data.getValue().getWaiterId(), String.valueOf(data.getValue().getWaiterId()))));
         orderStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getStatus().name()));
+        orderCashStatusColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(orderPaymentStatusMap.getOrDefault(data.getValue().getOrderID(), "UNPAID")));
         orderTotalColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getTotalAmount()));
 
         paymentOrderIdColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getOrderId()));
@@ -484,6 +506,8 @@ public class ManagerController {
                 orderItemImageView.setImage(null);
             }
         });
+        orderCustomerBox.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) ->
+                refreshOrderTableOptions(newVal, null));
 
         orderItemTable.setItems(orderItemRows);
         orderItemTable.setEditable(true);
@@ -613,16 +637,26 @@ public class ManagerController {
             List<Customer> customers = managementService.getCustomers();
             List<Employee> employees = managementService.getEmployees();
             List<Order> orders = managementService.getOrders();
+            List<Reservation> reservations = managementService.getReservations();
+            List<PaymentRecord> payments = managementService.getPayments();
+
+            cachedBranchTables = List.copyOf(tables);
+
+            customerNameMap.clear();
+            customers.forEach(c -> customerNameMap.put(c.getCustomerId(), c.getFullName()));
+            employeeNameMap.clear();
+            employees.forEach(e -> employeeNameMap.put(e.getEmployeeID(), e.getFullName()));
+            orderPaymentStatusMap.clear();
+            payments.forEach(payment -> orderPaymentStatusMap.put(payment.getOrderId(), payment.getStatus().name()));
 
             employeeTable.setItems(FXCollections.observableArrayList(employees));
             customerTable.setItems(FXCollections.observableArrayList(customers));
             menuItemTable.setItems(FXCollections.observableArrayList(menuItems));
             diningTableTable.setItems(FXCollections.observableArrayList(tables));
-            reservationTable.setItems(FXCollections.observableArrayList(managementService.getReservations()));
+            reservationTable.setItems(FXCollections.observableArrayList(reservations));
             orderTable.setItems(FXCollections.observableArrayList(orders));
-            paymentTable.setItems(FXCollections.observableArrayList(managementService.getPayments()));
+            paymentTable.setItems(FXCollections.observableArrayList(payments));
 
-            orderTableBox.setItems(FXCollections.observableArrayList(tables));
             orderCustomerBox.setItems(FXCollections.observableArrayList(customers));
             List<Employee> waiters = employees
                     .stream()
@@ -630,6 +664,7 @@ public class ManagerController {
                     .toList();
             orderWaiterBox.setItems(FXCollections.observableArrayList(waiters));
             orderMenuItemBox.setItems(FXCollections.observableArrayList(menuItems.stream().filter(MenuItem::isAvailable).toList()));
+            refreshOrderTableOptions(orderCustomerBox.getValue(), orderTableBox.getValue() == null ? null : orderTableBox.getValue().getTableId());
 
             reservationCustomerBox.setItems(FXCollections.observableArrayList(customers));
             reservationTableBox.setItems(FXCollections.observableArrayList(tables));
@@ -660,13 +695,50 @@ public class ManagerController {
 
 
     private void applyRoleAccess() {
+        // Reset visibility for all roles
+        orderCustomerIdColumn.setVisible(true);
+        orderWaiterIdColumn.setVisible(true);
+        orderCustomerLabel.setVisible(true);
+        orderCustomerLabel.setManaged(true);
+        orderCustomerBox.setVisible(true);
+        orderCustomerBox.setManaged(true);
+        orderWaiterLabel.setVisible(true);
+        orderWaiterLabel.setManaged(true);
+        orderWaiterBox.setVisible(true);
+        orderWaiterBox.setManaged(true);
+        orderTableLabel.setVisible(true);
+        orderTableLabel.setManaged(true);
+        orderTableBox.setVisible(true);
+        orderTableBox.setManaged(true);
+
+        diningTableForm.setVisible(true);
+        diningTableForm.setManaged(true);
+
         mainTabPane.getTabs().setAll(overviewTab);
         switch (currentUser.getRole()) {
             case "Manager" -> mainTabPane.getTabs().addAll(employeeTab, customerTabPane, menuTab, tablesTab, reservationsTab, ordersTab, paymentsTab);
-            case "Receptionist" -> mainTabPane.getTabs().addAll(customerTabPane, tablesTab, reservationsTab);
+            case "Receptionist" -> {
+                mainTabPane.getTabs().addAll(customerTabPane, tablesTab, reservationsTab);
+                diningTableForm.setVisible(false);
+                diningTableForm.setManaged(false);
+            }
             case "Waiter" -> mainTabPane.getTabs().addAll(customerTabPane, ordersTab);
-            case "Chef" -> mainTabPane.getTabs().add(ordersTab);
-            case "Cashier" -> mainTabPane.getTabs().addAll(ordersTab, paymentsTab);
+            case "Chef" -> {
+                mainTabPane.getTabs().add(ordersTab);
+                orderCustomerLabel.setVisible(false);
+                orderCustomerLabel.setManaged(false);
+                orderCustomerBox.setVisible(false);
+                orderCustomerBox.setManaged(false);
+                orderWaiterLabel.setVisible(false);
+                orderWaiterLabel.setManaged(false);
+                orderWaiterBox.setVisible(false);
+                orderWaiterBox.setManaged(false);
+                orderTableLabel.setVisible(false);
+                orderTableLabel.setManaged(false);
+                orderTableBox.setVisible(false);
+                orderTableBox.setManaged(false);
+            }
+            case "Cashier" -> mainTabPane.getTabs().setAll(paymentsTab);
             default -> mainTabPane.getTabs().addAll(customerTabPane, reservationsTab);
         }
     }
@@ -684,7 +756,7 @@ public class ManagerController {
                     employeeDateJoinedField.getText().trim(),
                     employeeRoleBox.getValue(),
                     selected == null ? null : selected.getAccount(),
-                    1 // Default branch ID
+                    currentUser.getBranchId()
             );
 
             if (selected == null) {
@@ -739,7 +811,7 @@ public class ManagerController {
                     customerNameField.getText().trim(),
                     customerEmailField.getText().trim(),
                     customerPhoneField.getText().trim(),
-                    1 // Default branch ID
+                    currentUser.getBranchId()
             );
             if (selected == null) {
                 managementService.createCustomer(customer);
@@ -786,7 +858,7 @@ public class ManagerController {
             MenuItem selected = menuItemTable.getSelectionModel().getSelectedItem();
             MenuItem item = new MenuItem(
                     selected == null ? 0 : selected.getMenuItemID(),
-                    1,
+                    currentUser.getBranchId(),
                     menuTitleField.getText().trim(),
                     menuDescriptionField.getText().trim(),
                     parseDouble(menuPriceField.getText(), "Price"),
@@ -1027,6 +1099,7 @@ public class ManagerController {
 
             Order order = new Order(
                     selected == null ? 0 : selected.getOrderID(),
+                    currentUser.getBranchId(),
                     customerId,
                     waiterId,
                     selectedTable.getTableId(),
@@ -1040,7 +1113,8 @@ public class ManagerController {
                         0,
                         selected == null ? 0 : selected.getOrderID(),
                         row.getQuantity(),
-                        row.getMenuItem()
+                        row.getMenuItem(),
+                        1
                 ));
             }
             order.setTotalAmount(calculateSelectedOrderTotal());
@@ -1082,6 +1156,7 @@ public class ManagerController {
         orderCustomerBox.setValue(null);
         orderWaiterBox.setValue(null);
         orderTableBox.setValue(null);
+        refreshOrderTableOptions(null, null);
         orderMenuItemBox.setValue(null);
         orderItemQtyField.setText("1");
         orderItemRows.clear();
@@ -1091,15 +1166,42 @@ public class ManagerController {
     }
 
     @FXML
+    public void searchAvailableTables() {
+        try {
+            LocalDate date = searchDatePicker.getValue();
+            if (date == null) throw new IllegalArgumentException("Sana tanlanmagan");
+            String timeStr = searchTimeField.getText();
+            if (isBlank(timeStr)) throw new IllegalArgumentException("Vaqt kiritilmagan");
+            
+            LocalDateTime dateTime = LocalDateTime.of(date, java.time.LocalTime.parse(timeStr));
+            List<Table> available = managementService.getAvailableTables(dateTime, 120);
+            
+            reservationTableBox.setItems(FXCollections.observableArrayList(available));
+            if (!available.isEmpty()) {
+                reservationTableBox.setValue(available.get(0));
+                setStatus(available.size() + " ta bo'sh stol topildi", false);
+            } else {
+                setStatus("Bo'sh stol topilmadi", true);
+            }
+        } catch (Exception e) {
+            setStatus("Qidiruvda xatolik: " + e.getMessage(), true);
+        }
+    }
+
+    @FXML
     public void savePayment() {
         try {
             PaymentRecord selected = paymentTable.getSelectionModel().getSelectedItem();
             Order order = requireSelection(paymentOrderBox.getValue(), "Order");
+            PaymentRecord existingForOrder = managementService.getPaymentByOrderId(order.getOrderID());
+            int paymentId = selected != null
+                    ? selected.getId()
+                    : existingForOrder == null ? 0 : existingForOrder.getId();
             double amount = isBlank(paymentAmountField.getText())
                     ? order.getTotalAmount()
                     : parseDouble(paymentAmountField.getText(), "Amount");
             PaymentRecord payment = new PaymentRecord(
-                    selected == null ? 0 : selected.getId(),
+                    paymentId,
                     order.getOrderID(),
                     amount,
                     PaymentMethod.valueOf(paymentMethodBox.getValue()),
@@ -1107,7 +1209,7 @@ public class ManagerController {
                     parseDateTime(paymentCreatedAtField.getText()),
                     paymentDetailsField.getText().trim()
             );
-            if (selected == null) {
+            if (paymentId == 0) {
                 managementService.createPayment(payment);
                 setStatus("Payment qo'shildi", false);
             } else {
@@ -1253,6 +1355,7 @@ public class ManagerController {
                     .orElse(null);
         }
         orderCustomerBox.setValue(customer);
+        refreshOrderTableOptions(customer, order.getTableId());
 
         Employee waiter = null;
         if (order.getWaiterId() != null) {
@@ -1264,16 +1367,6 @@ public class ManagerController {
         }
         orderWaiterBox.setValue(waiter);
 
-        Table table = null;
-        if (order.getTableId() != null) {
-            table = orderTableBox.getItems()
-                    .stream()
-                    .filter(candidate -> candidate.getTableId() == order.getTableId())
-                    .findFirst()
-                    .orElse(null);
-        }
-        orderTableBox.setValue(table);
-
         orderItemRows.clear();
         for (MealItem mealItem : order.getItems()) {
             orderItemRows.add(new OrderItemRow(mealItem.getMenuItem(), mealItem.getQuantity()));
@@ -1282,6 +1375,47 @@ public class ManagerController {
         orderStatusBox.setValue(order.getStatus().name());
         orderCreatedAtField.setText(formatDateTime(order.getCreatedAt()));
         orderTotalField.setText(String.valueOf(order.getTotalAmount()));
+    }
+
+    private void refreshOrderTableOptions(Customer customer, Integer selectedTableId) {
+        List<Table> availableTables = getOrderTablesForCustomer(customer, selectedTableId);
+        orderTableBox.setItems(FXCollections.observableArrayList(availableTables));
+
+        Table selectedTable = selectedTableId == null
+                ? null
+                : availableTables.stream()
+                .filter(candidate -> candidate.getTableId() == selectedTableId)
+                .findFirst()
+                .orElse(null);
+
+        if (selectedTable != null) {
+            orderTableBox.setValue(selectedTable);
+        } else if (availableTables.size() == 1) {
+            orderTableBox.setValue(availableTables.get(0));
+        } else {
+            orderTableBox.setValue(null);
+        }
+    }
+
+    private List<Table> getOrderTablesForCustomer(Customer customer, Integer selectedTableId) {
+        if (!"Waiter".equalsIgnoreCase(currentUser.getRole())) {
+            return cachedBranchTables;
+        }
+        if (customer == null) {
+            return selectedTableId == null ? List.of() : cachedBranchTables.stream()
+                    .filter(table -> table.getTableId() == selectedTableId)
+                    .toList();
+        }
+
+        List<Table> filteredTables = managementService.getAssignedTablesForCustomer(customer.getCustomerId());
+
+        if (filteredTables.isEmpty() && selectedTableId != null) {
+            return cachedBranchTables.stream()
+                    .filter(table -> table.getTableId() == selectedTableId)
+                    .toList();
+        }
+
+        return filteredTables;
     }
 
     private void fillPaymentForm(PaymentRecord payment) {

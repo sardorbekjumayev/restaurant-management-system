@@ -4,13 +4,16 @@ import com.example.restaurantmanagementsystem.Model.DashboardStats;
 import com.example.restaurantmanagementsystem.Model.Orders.Order;
 import com.example.restaurantmanagementsystem.Model.Payments.PaymentRecord;
 import com.example.restaurantmanagementsystem.Model.Restaurant.MenuItem;
+import com.example.restaurantmanagementsystem.Model.Restaurant.MenuSection;
 import com.example.restaurantmanagementsystem.Model.Tables.Table;
 import com.example.restaurantmanagementsystem.Model.User;
 import com.example.restaurantmanagementsystem.Model.Users.Customer;
 import com.example.restaurantmanagementsystem.Model.Users.Employee;
 import com.example.restaurantmanagementsystem.Model.Users.Reservation;
+import com.example.restaurantmanagementsystem.Enums.ReservationStatus;
 import com.example.restaurantmanagementsystem.repository.ManagementRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ManagementService {
@@ -68,6 +71,10 @@ public class ManagementService {
         return repository.findMenuItems();
     }
 
+    public List<MenuSection> getMenuSections() {
+        return repository.findMenuSections();
+    }
+
     public MenuItem createMenuItem(MenuItem item) {
         validateText(item.getTitle(), "Menu title");
         return repository.createMenuItem(item);
@@ -84,6 +91,16 @@ public class ManagementService {
 
     public List<Table> getTables() {
         return repository.findTables();
+    }
+
+    public List<Table> getAvailableTables(LocalDateTime reservationTime, int peopleCount, Integer excludeReservationId) {
+        if (reservationTime == null) {
+            throw new IllegalArgumentException("Reservation time bo'sh bo'lmasligi kerak");
+        }
+        if (peopleCount <= 0) {
+            throw new IllegalArgumentException("People count 0 dan katta bo'lishi kerak");
+        }
+        return repository.findAvailableTables(reservationTime, peopleCount, excludeReservationId);
     }
 
     public Table createTable(Table table) {
@@ -136,6 +153,10 @@ public class ManagementService {
         return repository.findPayments();
     }
 
+    public PaymentRecord getPaymentByOrderId(int orderId) {
+        return repository.findPaymentByOrderId(orderId);
+    }
+
     public PaymentRecord createPayment(PaymentRecord payment) {
         return repository.createPayment(payment);
     }
@@ -146,6 +167,34 @@ public class ManagementService {
 
     public void deletePayment(PaymentRecord payment) {
         repository.deletePayment(payment.getId());
+    }
+
+    public List<Table> getAvailableTables(LocalDateTime time, int durationMinutes) {
+        return repository.findAvailableTables(time, durationMinutes);
+    }
+
+    public List<Table> getAssignedTablesForCustomer(int customerId) {
+        return repository.findAssignedTablesForCustomer(customerId);
+    }
+
+    public void checkUpcomingReservationsAndNotify() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime threshold = now.plusMinutes(30);
+        List<Reservation> reservations = getReservations();
+        for (Reservation res : reservations) {
+            if (res.getStatus() == ReservationStatus.confirmed && 
+                res.getTimeOfReservation().isAfter(now) && 
+                res.getTimeOfReservation().isBefore(threshold)) {
+                sendNotification(res.getCustomer().getCustomerId(), 
+                    "Sizning band qilgan vaqtingiz yaqinlashmoqda: " + res.getTimeOfReservation(), 
+                    "RESERVATION_REMINDER");
+            }
+        }
+    }
+
+    public void sendNotification(int userId, String message, String type) {
+        // Logic to insert into notifications table via repository (to be implemented)
+        System.out.println("Notification sent to " + userId + ": " + message);
     }
 
     private void validateText(String value, String fieldName) {
