@@ -203,9 +203,9 @@
                <content>
                   <SplitPane dividerPositions="0.62">
                      <items>
-                              <TableView fx:id="menuItemTable">
+                        <TableView fx:id="menuItemTable">
                            <columns>
-                              <TableColumn fx:id="menuSectionIdColumn" prefWidth="140.0" text="Section" />
+                              <TableColumn fx:id="menuSectionIdColumn" prefWidth="90.0" text="Section" />
                               <TableColumn fx:id="menuTitleColumn" prefWidth="250.0" text="Title" />
                               <TableColumn fx:id="menuPriceColumn" prefWidth="120.0" text="Price" />
                               <TableColumn fx:id="menuAvailableColumn" prefWidth="90.0" text="Available" />
@@ -215,12 +215,6 @@
                            <padding><Insets bottom="14.0" left="14.0" right="14.0" top="14.0" /></padding>
                            <children>
                               <Label text="Menu Item Form" />
-                              <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                 <children>
-                                    <Label minWidth="60.0" text="Section" />
-                                    <ChoiceBox fx:id="menuSectionBox" prefWidth="220.0" />
-                                 </children>
-                              </HBox>
                               <GridPane hgap="10.0" vgap="10.0">
                                  <children>
                                     <Label text="Title" GridPane.rowIndex="0" />
@@ -352,7 +346,7 @@
                                     <Label text="Status" GridPane.rowIndex="4" />
                                     <ChoiceBox fx:id="reservationStatusBox" prefWidth="220.0" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                                     <Label text="Check-in" GridPane.rowIndex="5" />
-                                    <TextField fx:id="reservationCheckInField" editable="false" promptText="Auto" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                                    <TextField fx:id="reservationCheckInField" promptText="yyyy-MM-dd HH:mm" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                                     <Label text="Notes" GridPane.rowIndex="6" />
                                     <TextArea fx:id="reservationNotesField" prefHeight="90.0" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                                  </children>
@@ -393,7 +387,6 @@
                               <TableColumn fx:id="orderWaiterIdColumn" prefWidth="120.0" text="Waiter" />
                               <TableColumn fx:id="orderStatusColumn" prefWidth="150.0" text="Status" />
                               <TableColumn fx:id="orderTotalColumn" prefWidth="120.0" text="Total" />
-                              <TableColumn fx:id="orderPaymentStatusColumn" prefWidth="140.0" text="Cash Status" />
                            </columns>
                         </TableView>
                         <VBox spacing="10.0" style="-fx-background-color: white; -fx-background-radius: 14; -fx-border-color: #e7e5e4; -fx-border-radius: 14;">
@@ -433,8 +426,9 @@
                                     <javafx.scene.image.ImageView fx:id="orderItemImageView" fitHeight="60.0" fitWidth="60.0" preserveRatio="true" />
 
                                     <TextField fx:id="orderItemQtyField" prefWidth="60.0" promptText="Qty" />
-                                    <Button fx:id="orderAddItemButton" mnemonicParsing="false" onAction="#addOrderItem" text="Add" />
-                                    <Button fx:id="orderClearItemsButton" mnemonicParsing="false" onAction="#clearOrderItems" text="Clear items" />
+                                    <TextField fx:id="orderItemSeatField" prefWidth="60.0" promptText="Seat" />
+                                    <Button mnemonicParsing="false" onAction="#addOrderItem" text="Add" />
+                                    <Button mnemonicParsing="false" onAction="#clearOrderItems" text="Clear items" />
                                  </children>
                               </HBox>
 
@@ -444,6 +438,7 @@
                                     <TableColumn fx:id="orderItemTitleColumn" prefWidth="180.0" text="Item" />
                                     <TableColumn fx:id="orderItemUnitPriceColumn" prefWidth="90.0" text="Price" />
                                     <TableColumn fx:id="orderItemQtyColumn" prefWidth="60.0" text="Qty" />
+                                    <TableColumn fx:id="orderItemSeatColumn" prefWidth="60.0" text="Seat" />
                                     <TableColumn fx:id="orderItemLineTotalColumn" prefWidth="90.0" text="Total" />
                                  </columns>
                               </TableView>
@@ -463,9 +458,9 @@
                               </GridPane>
                               <HBox spacing="10.0">
                                  <children>
-                                    <Button fx:id="orderSaveButton" mnemonicParsing="false" onAction="#saveOrder" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
-                                    <Button fx:id="orderDeleteButton" mnemonicParsing="false" onAction="#deleteOrder" text="Delete" />
-                                    <Button fx:id="orderNewButton" mnemonicParsing="false" onAction="#clearOrderForm" text="New" />
+                                    <Button mnemonicParsing="false" onAction="#saveOrder" style="-fx-background-color: #0f766e; -fx-text-fill: white;" text="Insert / Update" />
+                                    <Button mnemonicParsing="false" onAction="#deleteOrder" text="Delete" />
+                                    <Button mnemonicParsing="false" onAction="#clearOrderForm" text="New" />
                                  </children>
                               </HBox>
                            </children>
